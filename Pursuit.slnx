@@ -1,0 +1,8 @@
+<Solution>
+  <Folder Name="/src/">
+    <Project Path="src/Pursuit.API/Pursuit.API.csproj" />
+    <Project Path="src/Pursuit.Application/Pursuit.Application.csproj" />
+    <Project Path="src/Pursuit.Domain/Pursuit.Domain.csproj" />
+    <Project Path="src/Pursuit.Infrastructure/Pursuit.Infrastructure.csproj" />
+  </Folder>
+</Solution>
