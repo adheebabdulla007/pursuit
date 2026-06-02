@@ -480,3 +480,7 @@ $RECYCLE.BIN/
 
 # Vim temporary swap files
 *.swp
+
+# Environment-specific settings with sensitive values
+appsettings.Development.json
+appsettings.Production.json
