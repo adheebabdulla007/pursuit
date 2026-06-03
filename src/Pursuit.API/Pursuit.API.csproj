@@ -16,6 +16,7 @@
 
   <ItemGroup>
     <ProjectReference Include="..\Pursuit.Application\Pursuit.Application.csproj" />
+    <ProjectReference Include="..\Pursuit.Infrastructure\Pursuit.Infrastructure.csproj" />
   </ItemGroup>
 
 </Project>
