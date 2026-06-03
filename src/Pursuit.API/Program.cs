@@ -1,15 +1,11 @@
-using Microsoft.EntityFrameworkCore;
-using Pursuit.Infrastructure.Persistence;
+using Pursuit.Infrastructure;
 
 var builder = WebApplication.CreateBuilder(args);
 
 // Add services to the container
 builder.Services.AddControllers();
 builder.Services.AddOpenApi();
-
-// Database
-builder.Services.AddDbContext<AppDbContext>(options =>
-    options.UseSqlServer(builder.Configuration.GetConnectionString("DefaultConnection")));
+builder.Services.AddInfrastructure(builder.Configuration);
 
 var app = builder.Build();
 
