@@ -4,9 +4,9 @@ using Pursuit.Domain.Entities;
 
 namespace Pursuit.Infrastructure.Persistence.Configurations;
 
-public class ApplicationConfiguration : IEntityTypeConfiguration<Application>
+public class ApplicationConfiguration : IEntityTypeConfiguration<Domain.Entities.Application>
 {
-    public void Configure(EntityTypeBuilder<Application> builder)
+    public void Configure(EntityTypeBuilder<Domain.Entities.Application> builder)
     {
         builder.HasKey(a => a.Id);
 
