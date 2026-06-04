@@ -4,13 +4,13 @@ namespace Pursuit.Application.Interfaces;
 
 public interface IRepository<T> where T : BaseEntity
 {
-    Task<T?> GetByIdAsync(Guid id);
+    Task<T?> GetByIdAsync(Guid id, CancellationToken cancellationToken = default);
 
-    Task<IEnumerable<T>> GetAllAsync();
+    Task<IReadOnlyList<T>> GetAllAsync(CancellationToken cancellationToken = default);
 
-    Task AddAsync(T entity);
+    Task AddAsync(T entity, CancellationToken cancellationToken = default);
 
-    Task UpdateAsync(T entity);
+    Task UpdateAsync(T entity, CancellationToken cancellationToken = default);
 
-    Task DeleteAsync(T entity);
+    Task DeleteAsync(T entity, CancellationToken cancellationToken = default);
 }
