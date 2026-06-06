@@ -12,7 +12,7 @@ using Pursuit.Infrastructure.Persistence;
 namespace Pursuit.Infrastructure.Persistence.Migrations
 {
     [DbContext(typeof(AppDbContext))]
-    [Migration("20260606130956_MakeUserTenantIdNullable")]
+    [Migration("20260606163018_MakeUserTenantIdNullable")]
     partial class MakeUserTenantIdNullable
     {
         /// <inheritdoc />
@@ -209,7 +209,7 @@ namespace Pursuit.Infrastructure.Persistence.Migrations
                     b.Property<int>("Role")
                         .HasColumnType("int");
 
-                    b.Property<Guid>("TenantId")
+                    b.Property<Guid?>("TenantId")
                         .HasColumnType("uniqueidentifier");
 
                     b.Property<DateTime>("UpdatedAt")
@@ -260,8 +260,7 @@ namespace Pursuit.Infrastructure.Persistence.Migrations
                     b.HasOne("Pursuit.Domain.Entities.User", "User")
                         .WithMany()
                         .HasForeignKey("UserId")
-                        .OnDelete(DeleteBehavior.Restrict)
-                        .IsRequired();
+                        .OnDelete(DeleteBehavior.Restrict);
 
                     b.Navigation("User");
                 });

@@ -7,5 +7,5 @@ public class Notification : BaseEntity
     public bool IsSent { get; set; } = false;
 
     // Navigation properties
-    public User User { get; set; } = null!;
+    public User? User { get; set; }
 }
