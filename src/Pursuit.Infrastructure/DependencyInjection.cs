@@ -4,6 +4,7 @@ using Microsoft.Extensions.DependencyInjection;
 using Pursuit.Application.Interfaces;
 using Pursuit.Infrastructure.Persistence;
 using Pursuit.Infrastructure.Persistence.Repositories;
+using Pursuit.Infrastructure.Services;
 
 namespace Pursuit.Infrastructure;
 
@@ -16,8 +17,13 @@ public static class DependencyInjection
         services.AddDbContext<AppDbContext>(options =>
             options.UseSqlServer(configuration.GetConnectionString("DefaultConnection")));
 
+        services.AddHttpContextAccessor();
+
         services.AddScoped<IJobRepository, JobRepository>();
         services.AddScoped<IApplicationRepository, ApplicationRepository>();
+
+        services.AddScoped<ITenantService, TenantService>();
+        services.AddScoped<ICurrentUserService, CurrentUserService>();
 
         return services;
     }
