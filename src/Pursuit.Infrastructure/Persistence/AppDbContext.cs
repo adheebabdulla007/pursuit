@@ -37,7 +37,7 @@ public class AppDbContext : DbContext
 
         modelBuilder.Entity<Domain.Entities.Application>()
             .HasQueryFilter(a => _tenantService.GetTenantId() == null
-                || a.Job.TenantId == _tenantService.GetTenantId());
+                || a.TenantId == _tenantService.GetTenantId());
     }
 
     public override Task<int> SaveChangesAsync(CancellationToken cancellationToken = default)

@@ -10,6 +10,9 @@ public class ApplicationConfiguration : IEntityTypeConfiguration<Domain.Entities
     {
         builder.HasKey(a => a.Id);
 
+        builder.Property(a => a.TenantId)
+            .IsRequired();
+
         builder.Property(a => a.ResumeUrl)
             .IsRequired()
             .HasMaxLength(500);
