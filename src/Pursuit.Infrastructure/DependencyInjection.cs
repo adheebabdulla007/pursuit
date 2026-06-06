@@ -1,7 +1,9 @@
 ﻿using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
+using Pursuit.Application.Interfaces;
 using Pursuit.Infrastructure.Persistence;
+using Pursuit.Infrastructure.Persistence.Repositories;
 
 namespace Pursuit.Infrastructure;
 
@@ -13,6 +15,9 @@ public static class DependencyInjection
     {
         services.AddDbContext<AppDbContext>(options =>
             options.UseSqlServer(configuration.GetConnectionString("DefaultConnection")));
+
+        services.AddScoped<IJobRepository, JobRepository>();
+        services.AddScoped<IApplicationRepository, ApplicationRepository>();
 
         return services;
     }
