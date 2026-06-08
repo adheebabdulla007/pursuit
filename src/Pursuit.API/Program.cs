@@ -1,3 +1,4 @@
+using Pursuit.API.Middleware;
 using Pursuit.Application;
 using Pursuit.Infrastructure;
 
@@ -17,6 +18,7 @@ if (app.Environment.IsDevelopment())
     app.MapOpenApi();
 }
 
+app.UseMiddleware<ExceptionMiddleware>();
 app.UseHttpsRedirection();
 app.UseAuthorization();
 app.MapControllers();
