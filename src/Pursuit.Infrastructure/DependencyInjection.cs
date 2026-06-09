@@ -2,6 +2,7 @@
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Pursuit.Application.Interfaces;
+using Pursuit.Infrastructure.Identity;
 using Pursuit.Infrastructure.Persistence;
 using Pursuit.Infrastructure.Persistence.Repositories;
 using Pursuit.Infrastructure.Services;
@@ -24,6 +25,9 @@ public static class DependencyInjection
 
         services.AddScoped<ITenantService, TenantService>();
         services.AddScoped<ICurrentUserService, CurrentUserService>();
+
+        services.AddScoped<IPasswordHasher, PasswordHasher>();
+        services.AddScoped<ITokenService, TokenService>();
 
         return services;
     }
