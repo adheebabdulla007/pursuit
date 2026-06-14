@@ -1,5 +1,6 @@
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.IdentityModel.Tokens;
+using Pursuit.API.Filters;
 using Pursuit.API.Middleware;
 using Pursuit.Application;
 using Pursuit.Infrastructure;
@@ -8,7 +9,10 @@ using System.Text;
 var builder = WebApplication.CreateBuilder(args);
 
 // Add services to the container
-builder.Services.AddControllers()
+builder.Services.AddControllers(options =>
+{
+    options.Filters.Add<ValidationFilter>();
+})
     .AddJsonOptions(options =>
     {
         options.JsonSerializerOptions.Converters.Add(
@@ -53,4 +57,4 @@ app.UseAuthentication();
 app.UseAuthorization();
 app.MapControllers();
 
-app.Run();
+await app.RunAsync();

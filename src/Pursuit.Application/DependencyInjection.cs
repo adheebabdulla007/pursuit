@@ -1,6 +1,7 @@
 ﻿using Microsoft.Extensions.DependencyInjection;
 using Pursuit.Application.Interfaces;
 using Pursuit.Application.Services;
+using FluentValidation;
 
 namespace Pursuit.Application;
 
@@ -13,6 +14,8 @@ public static class DependencyInjection
         services.AddScoped<IApplicationService, ApplicationService>();
 
         services.AddScoped<IAuthService, AuthService>();
+
+        services.AddValidatorsFromAssemblyContaining<IJobService>();
 
         return services;
     }
