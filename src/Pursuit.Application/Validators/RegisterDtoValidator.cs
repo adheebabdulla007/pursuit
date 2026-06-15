@@ -9,10 +9,12 @@ public class RegisterDtoValidator : AbstractValidator<RegisterDto>
     public RegisterDtoValidator()
     {
         RuleFor(x => x.FirstName)
+            .Cascade(CascadeMode.Stop)
             .NotEmpty().WithMessage("First name is required.")
             .MaximumLength(100).WithMessage("First name must be 100 characters or less.");
 
         RuleFor(x => x.LastName)
+            .Cascade(CascadeMode.Stop)
             .NotEmpty().WithMessage("Last name is required.")
             .MaximumLength(100).WithMessage("Last name must be 100 characters or less.");
 
@@ -38,9 +40,10 @@ public class RegisterDtoValidator : AbstractValidator<RegisterDto>
             .WithMessage("Role must be either 'Employer' or 'JobSeeker'.");
 
         RuleFor(x => x.TenantName)
+            .Cascade(CascadeMode.Stop)
             .NotEmpty().WithMessage("Company name is required for employer registration.")
             .MaximumLength(200).WithMessage("Company name must be 200 characters or less.")
             .When(x => Enum.TryParse<UserRole>(x.Role, ignoreCase: true, out var role)
-                          && role == UserRole.Employer);
+                       && role == UserRole.Employer);
     }
 }

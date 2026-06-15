@@ -11,6 +11,7 @@ public class CreateApplicationDtoValidator : AbstractValidator<CreateApplication
             .NotEmpty().WithMessage("JobId is required.");
 
         RuleFor(x => x.ResumeUrl)
+            .Cascade(CascadeMode.Stop)
             .NotEmpty().WithMessage("ResumeUrl is required.")
             .MaximumLength(500).WithMessage("ResumeUrl must be 500 characters or less.")
             .Must(BeAValidUrl).WithMessage("ResumeUrl must be a valid absolute URL.");
