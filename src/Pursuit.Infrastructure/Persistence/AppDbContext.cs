@@ -6,13 +6,13 @@ namespace Pursuit.Infrastructure.Persistence;
 
 public class AppDbContext : DbContext
 {
-    private readonly ITenantService _tenantService;
+    private readonly IDbContextScope _scope;
 
     public AppDbContext(
         DbContextOptions<AppDbContext> options,
-        ITenantService tenantService) : base(options)
+        IDbContextScope scope) : base(options)
     {
-        _tenantService = tenantService;
+        _scope = scope;
     }
 
     public DbSet<Tenant> Tenants => Set<Tenant>();
@@ -28,16 +28,21 @@ public class AppDbContext : DbContext
         modelBuilder.ApplyConfigurationsFromAssembly(typeof(AppDbContext).Assembly);
 
         modelBuilder.Entity<Job>()
-            .HasQueryFilter(j => _tenantService.GetTenantId() == null
-                || j.TenantId == _tenantService.GetTenantId());
+            .HasQueryFilter(j =>
+                _scope.TenantId == null
+                || j.TenantId == _scope.TenantId);
 
         modelBuilder.Entity<User>()
-            .HasQueryFilter(u => u.TenantId == null
-                || u.TenantId == _tenantService.GetTenantId());
+            .HasQueryFilter(u =>
+                u.TenantId == null
+                || u.TenantId == _scope.TenantId);
 
         modelBuilder.Entity<Domain.Entities.Application>()
-            .HasQueryFilter(a => _tenantService.GetTenantId() == null
-                || a.TenantId == _tenantService.GetTenantId());
+            .HasQueryFilter(a =>
+                _scope.TenantId != null
+                    ? a.TenantId == _scope.TenantId
+                    : _scope.CurrentUserId == null
+                        || a.ApplicantId == _scope.CurrentUserId);
     }
 
     public override Task<int> SaveChangesAsync(CancellationToken cancellationToken = default)

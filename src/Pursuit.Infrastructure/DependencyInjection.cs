@@ -19,6 +19,7 @@ public static class DependencyInjection
             options.UseSqlServer(configuration.GetConnectionString("DefaultConnection")));
 
         services.AddHttpContextAccessor();
+        services.AddScoped<IDbContextScope, HttpDbContextScope>();
 
         services.AddScoped<IJobRepository, JobRepository>();
         services.AddScoped<IApplicationRepository, ApplicationRepository>();
