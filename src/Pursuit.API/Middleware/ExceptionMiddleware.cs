@@ -2,6 +2,7 @@
 using System.Text.Json;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.Extensions.Hosting;
+using Pursuit.Domain.Exceptions;
 
 namespace Pursuit.API.Middleware;
 
@@ -45,6 +46,7 @@ public sealed class ExceptionMiddleware
         {
             KeyNotFoundException => (HttpStatusCode.NotFound, exception.Message),
             UnauthorizedAccessException => (HttpStatusCode.Unauthorized, exception.Message),
+            ForbiddenAccessException => (HttpStatusCode.Forbidden, exception.Message),
             InvalidOperationException => (HttpStatusCode.BadRequest, exception.Message),
             ArgumentException => (HttpStatusCode.BadRequest, exception.Message),
             _ => (HttpStatusCode.InternalServerError, "An unexpected error occurred.")
