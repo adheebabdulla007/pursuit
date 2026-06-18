@@ -2,6 +2,7 @@
 using Pursuit.Application.Interfaces;
 using Pursuit.Domain.Entities;
 using Pursuit.Domain.Enums;
+using Pursuit.Domain.Exceptions;
 
 namespace Pursuit.Application.Services;
 
@@ -74,6 +75,9 @@ public class JobService : IJobService
         var job = await _jobRepository.GetByIdAsync(id, cancellationToken)
             ?? throw new KeyNotFoundException($"Job with ID {id} was not found.");
 
+        if (job.TenantId != _currentUserService.TenantId)
+            throw new ForbiddenAccessException("You do not have permission to modify this job.");
+
         job.Title = dto.Title;
         job.Description = dto.Description;
         job.Location = dto.Location;
@@ -91,6 +95,9 @@ public class JobService : IJobService
     {
         var job = await _jobRepository.GetByIdAsync(id, cancellationToken)
             ?? throw new KeyNotFoundException($"Job with ID {id} was not found.");
+
+        if (job.TenantId != _currentUserService.TenantId)
+            throw new ForbiddenAccessException("You do not have permission to delete this job.");
 
         await _jobRepository.DeleteAsync(job, cancellationToken);
     }

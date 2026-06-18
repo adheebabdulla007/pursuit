@@ -27,11 +27,6 @@ public class AppDbContext : DbContext
 
         modelBuilder.ApplyConfigurationsFromAssembly(typeof(AppDbContext).Assembly);
 
-        modelBuilder.Entity<Job>()
-            .HasQueryFilter(j =>
-                _scope.TenantId == null
-                || j.TenantId == _scope.TenantId);
-
         modelBuilder.Entity<User>()
             .HasQueryFilter(u =>
                 u.TenantId == null
