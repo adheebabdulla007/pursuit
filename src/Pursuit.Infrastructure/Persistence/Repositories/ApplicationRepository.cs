@@ -16,6 +16,8 @@ public class ApplicationRepository : Repository<Domain.Entities.Application>, IA
         CancellationToken cancellationToken = default)
     {
         return await _dbSet
+            .Include(a => a.Job)
+            .Include(a => a.Applicant)
             .Where(a => a.JobId == jobId)
             .ToListAsync(cancellationToken);
     }
@@ -25,6 +27,8 @@ public class ApplicationRepository : Repository<Domain.Entities.Application>, IA
         CancellationToken cancellationToken = default)
     {
         return await _dbSet
+            .Include(a => a.Applicant)
+            .Include(a => a.Job)
             .Where(a => a.ApplicantId == applicantId)
             .ToListAsync(cancellationToken);
     }
@@ -45,5 +49,15 @@ public class ApplicationRepository : Repository<Domain.Entities.Application>, IA
         return await _dbSet
             .Where(a => a.Status == status)
             .ToListAsync(cancellationToken);
+    }
+
+    public async Task<Domain.Entities.Application?> GetByIdWithDetailsAsync(
+    Guid id,
+    CancellationToken cancellationToken = default)
+    {
+        return await _dbSet
+            .Include(a => a.Job)
+            .Include(a => a.Applicant)
+            .FirstOrDefaultAsync(a => a.Id == id, cancellationToken);
     }
 }

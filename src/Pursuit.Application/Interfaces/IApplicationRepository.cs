@@ -21,4 +21,8 @@ public interface IApplicationRepository : IRepository<Domain.Entities.Applicatio
     Task<IReadOnlyList<Domain.Entities.Application>> GetByStatusAsync(
         ApplicationStatus status,
         CancellationToken cancellationToken = default);
+
+    Task<Domain.Entities.Application?> GetByIdWithDetailsAsync(
+    Guid id,
+    CancellationToken cancellationToken = default);
 }

@@ -49,7 +49,7 @@ public class ApplicationService : IApplicationService
 
         await _applicationRepository.AddAsync(application, cancellationToken);
 
-        return MapToDto(application, job);
+        return MapToDto(application, job, null);
     }
 
     public async Task<IReadOnlyList<ApplicationDto>> GetMyApplicationsAsync(
@@ -59,7 +59,7 @@ public class ApplicationService : IApplicationService
 
         var applications = await _applicationRepository.GetByApplicantAsync(applicantId, cancellationToken);
 
-        return applications.Select(a => MapToDto(a, a.Job)).ToList();
+        return applications.Select(a => MapToDto(a, a.Job, a.Applicant)).ToList();
     }
 
     public async Task<IReadOnlyList<ApplicationDto>> GetByJobAsync(
@@ -68,7 +68,7 @@ public class ApplicationService : IApplicationService
     {
         var applications = await _applicationRepository.GetByJobAsync(jobId, cancellationToken);
 
-        return applications.Select(a => MapToDto(a, a.Job)).ToList();
+        return applications.Select(a => MapToDto(a, a.Job, a.Applicant)).ToList();
     }
 
     public async Task<ApplicationDto> UpdateStatusAsync(
@@ -76,23 +76,23 @@ public class ApplicationService : IApplicationService
         UpdateApplicationStatusDto dto,
         CancellationToken cancellationToken = default)
     {
-        var application = await _applicationRepository.GetByIdAsync(applicationId, cancellationToken)
-            ?? throw new KeyNotFoundException($"Application with ID {applicationId} was not found.");
+        var application = await _applicationRepository.GetByIdWithDetailsAsync(applicationId, cancellationToken)
+                ?? throw new KeyNotFoundException($"Application with ID {applicationId} was not found.");
 
         application.Status = dto.Status;
 
         await _applicationRepository.UpdateAsync(application, cancellationToken);
 
-        return MapToDto(application, application.Job);
+        return MapToDto(application, application.Job, application.Applicant);
     }
 
-    private static ApplicationDto MapToDto(Domain.Entities.Application application, Job? job) => new()
+    private static ApplicationDto MapToDto(Domain.Entities.Application application, Job? job, User? applicant) => new()
     {
         Id = application.Id,
         JobId = application.JobId,
         JobTitle = job?.Title ?? string.Empty,
         ApplicantId = application.ApplicantId,
-        ApplicantName = string.Empty,
+        ApplicantName = applicant is not null ? $"{applicant.FirstName} {applicant.LastName}" : string.Empty,
         ResumeUrl = application.ResumeUrl,
         Status = application.Status,
         CreatedAt = application.CreatedAt
