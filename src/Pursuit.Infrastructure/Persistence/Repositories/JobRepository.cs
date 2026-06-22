@@ -32,6 +32,7 @@ public class JobRepository : Repository<Job>, IJobRepository
             query = query.Where(j => j.JobType == jobType.Value);
 
         return await query
+            .OrderBy(j => j.CreatedAt)
             .Skip((page - 1) * pageSize)
             .Take(pageSize)
             .ToListAsync(cancellationToken);
