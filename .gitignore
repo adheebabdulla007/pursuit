@@ -484,3 +484,4 @@ $RECYCLE.BIN/
 # Environment-specific settings with sensitive values
 appsettings.Development.json
 appsettings.Production.json
+.env
