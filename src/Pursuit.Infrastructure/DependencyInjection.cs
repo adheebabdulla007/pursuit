@@ -2,10 +2,12 @@
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Pursuit.Application.Interfaces;
+using Pursuit.Infrastructure.Caching;
 using Pursuit.Infrastructure.Identity;
 using Pursuit.Infrastructure.Persistence;
 using Pursuit.Infrastructure.Persistence.Repositories;
 using Pursuit.Infrastructure.Services;
+using StackExchange.Redis;
 
 namespace Pursuit.Infrastructure;
 
@@ -32,6 +34,14 @@ public static class DependencyInjection
 
         services.AddScoped<IUserRepository, UserRepository>();
         services.AddScoped<ITenantRepository, TenantRepository>();
+
+        var redisConnectionString = configuration["RedisSettings:ConnectionString"]
+                ?? throw new InvalidOperationException("RedisSettings:ConnectionString is not configured.");
+
+        services.AddSingleton<IConnectionMultiplexer>(
+            ConnectionMultiplexer.Connect(redisConnectionString));
+
+        services.AddSingleton<ICacheService, RedisCacheService>();
 
         return services;
     }

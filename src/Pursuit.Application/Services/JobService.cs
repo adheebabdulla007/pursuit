@@ -8,13 +8,20 @@ namespace Pursuit.Application.Services;
 
 public class JobService : IJobService
 {
+    private const string SearchCacheKeyPrefix = "pursuit:jobs:search:";
+
     private readonly IJobRepository _jobRepository;
     private readonly ICurrentUserService _currentUserService;
+    private readonly ICacheService _cacheService;
 
-    public JobService(IJobRepository jobRepository, ICurrentUserService currentUserService)
+    public JobService(
+        IJobRepository jobRepository,
+        ICurrentUserService currentUserService,
+        ICacheService cacheService)
     {
         _jobRepository = jobRepository;
         _currentUserService = currentUserService;
+        _cacheService = cacheService;
     }
 
     public async Task<JobDto> GetByIdAsync(Guid id, CancellationToken cancellationToken = default)
@@ -35,16 +42,26 @@ public class JobService : IJobService
         int pageSize,
         CancellationToken cancellationToken = default)
     {
+        var cacheKey = $"{SearchCacheKeyPrefix}{title}:{location}:{jobType}:{page}:{pageSize}";
+
+        var cached = await _cacheService.GetAsync<PagedResult<JobDto>>(cacheKey, cancellationToken);
+        if (cached is not null)
+            return cached;
+
         var jobs = await _jobRepository.SearchAsync(title, location, jobType, page, pageSize, cancellationToken);
         var total = await _jobRepository.CountAsync(title, location, jobType, cancellationToken);
 
-        return new PagedResult<JobDto>
+        var result = new PagedResult<JobDto>
         {
             Items = jobs.Select(MapToDto).ToList(),
             TotalCount = total,
             Page = page,
             PageSize = pageSize
         };
+
+        await _cacheService.SetAsync(cacheKey, result, TimeSpan.FromMinutes(5), cancellationToken);
+
+        return result;
     }
 
     public async Task<JobDto> CreateAsync(CreateJobDto dto, CancellationToken cancellationToken = default)
@@ -66,6 +83,7 @@ public class JobService : IJobService
         };
 
         await _jobRepository.AddAsync(job, cancellationToken);
+        await _cacheService.RemoveByPrefixAsync(SearchCacheKeyPrefix, cancellationToken);
 
         return MapToDto(job);
     }
@@ -87,6 +105,7 @@ public class JobService : IJobService
         job.IsActive = dto.IsActive;
 
         await _jobRepository.UpdateAsync(job, cancellationToken);
+        await _cacheService.RemoveByPrefixAsync(SearchCacheKeyPrefix, cancellationToken);
 
         return MapToDto(job);
     }
@@ -100,6 +119,7 @@ public class JobService : IJobService
             throw new ForbiddenAccessException("You do not have permission to delete this job.");
 
         await _jobRepository.DeleteAsync(job, cancellationToken);
+        await _cacheService.RemoveByPrefixAsync(SearchCacheKeyPrefix, cancellationToken);
     }
 
     public async Task<IReadOnlyList<JobDto>> GetByTenantAsync(CancellationToken cancellationToken = default)
