@@ -131,6 +131,16 @@ public class ApplicationService : IApplicationService
         return MapToDto(application, application.Job, application.Applicant);
     }
 
+    public async Task<ApplicationDto> GetByIdAsync(
+    Guid applicationId,
+    CancellationToken cancellationToken = default)
+    {
+        var application = await _applicationRepository.GetByIdWithDetailsAsync(applicationId, cancellationToken)
+            ?? throw new KeyNotFoundException($"Application with ID {applicationId} was not found.");
+
+        return MapToDto(application, application.Job, application.Applicant);
+    }
+
     private static ApplicationDto MapToDto(Domain.Entities.Application application, Job? job, User? applicant) => new()
     {
         Id = application.Id,

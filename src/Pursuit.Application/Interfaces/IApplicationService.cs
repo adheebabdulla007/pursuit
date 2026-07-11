@@ -19,4 +19,8 @@ public interface IApplicationService
         Guid applicationId,
         UpdateApplicationStatusDto dto,
         CancellationToken cancellationToken = default);
+
+    Task<ApplicationDto> GetByIdAsync(
+        Guid applicationId,
+        CancellationToken cancellationToken = default);
 }

@@ -8,6 +8,7 @@ using Pursuit.Infrastructure.Messaging;
 using Pursuit.Infrastructure.Persistence;
 using Pursuit.Infrastructure.Persistence.Repositories;
 using Pursuit.Infrastructure.Services;
+using Pursuit.Infrastructure.Storage;
 using RabbitMQ.Client;
 using StackExchange.Redis;
 
@@ -60,6 +61,7 @@ public static class DependencyInjection
 
         services.AddScoped<IMessagePublisher, RabbitMqPublisher>();
         services.AddHostedService<ApplicationSubmittedConsumer>();
+        services.AddScoped<IBlobStorageService, AzureBlobStorageService>();
 
         return services;
     }
