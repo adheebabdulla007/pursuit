@@ -26,6 +26,13 @@ public sealed class UserRepository : Repository<User>, IUserRepository
             .AnyAsync(u => u.Email == email, cancellationToken);
     }
 
+    public async Task<bool> ExistsByRoleAsync(UserRole role, CancellationToken cancellationToken = default)
+    {
+        return await _dbSet
+            .IgnoreQueryFilters()
+            .AnyAsync(u => u.Role == role, cancellationToken);
+    }
+
     public async Task<User?> GetEmployerByTenantIdAsync(Guid tenantId, CancellationToken cancellationToken = default)
     {
         return await _dbSet
