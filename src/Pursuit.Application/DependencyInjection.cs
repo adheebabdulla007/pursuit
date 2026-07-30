@@ -11,9 +11,12 @@ public static class DependencyInjection
         this IServiceCollection services)
     {
         services.AddScoped<IJobService, JobService>();
+
         services.AddScoped<IApplicationService, ApplicationService>();
 
         services.AddScoped<IAuthService, AuthService>();
+
+        services.AddScoped<IUserService, UserService>();
 
         services.AddValidatorsFromAssemblyContaining<IJobService>();
 

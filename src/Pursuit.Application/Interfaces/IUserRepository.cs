@@ -12,4 +12,8 @@ public interface IUserRepository : IRepository<User>
     Task<User?> GetEmployerByTenantIdAsync(Guid tenantId, CancellationToken cancellationToken = default);
 
     Task<bool> ExistsByRoleAsync(UserRole role, CancellationToken cancellationToken = default);
+
+    Task<IReadOnlyList<User>> GetPagedAsync(int page, int pageSize, CancellationToken cancellationToken = default);
+
+    Task<int> CountAsync(CancellationToken cancellationToken = default);
 }

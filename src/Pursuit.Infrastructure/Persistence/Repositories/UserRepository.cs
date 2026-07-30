@@ -39,4 +39,21 @@ public sealed class UserRepository : Repository<User>, IUserRepository
             .IgnoreQueryFilters()
             .FirstOrDefaultAsync(u => u.TenantId == tenantId && u.Role == UserRole.Employer, cancellationToken);
     }
+
+    public async Task<IReadOnlyList<User>> GetPagedAsync(int page, int pageSize, CancellationToken cancellationToken = default)
+    {
+        return await _dbSet
+            .IgnoreQueryFilters()
+            .OrderBy(u => u.CreatedAt)
+            .Skip((page - 1) * pageSize)
+            .Take(pageSize)
+            .ToListAsync(cancellationToken);
+    }
+
+    public async Task<int> CountAsync(CancellationToken cancellationToken = default)
+    {
+        return await _dbSet
+            .IgnoreQueryFilters()
+            .CountAsync(cancellationToken);
+    }
 }
