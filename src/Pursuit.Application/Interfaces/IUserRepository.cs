@@ -16,4 +16,6 @@ public interface IUserRepository : IRepository<User>
     Task<IReadOnlyList<User>> GetPagedAsync(int page, int pageSize, CancellationToken cancellationToken = default);
 
     Task<int> CountAsync(CancellationToken cancellationToken = default);
+
+    Task<int> CountByRoleAsync(UserRole role, CancellationToken cancellationToken = default);
 }

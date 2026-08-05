@@ -56,4 +56,12 @@ public sealed class UserRepository : Repository<User>, IUserRepository
             .IgnoreQueryFilters()
             .CountAsync(cancellationToken);
     }
+
+    public async Task<int> CountByRoleAsync(UserRole role, CancellationToken cancellationToken = default)
+    {
+        return await _dbSet
+            .IgnoreQueryFilters()
+            .Where(u => u.Role == role)
+            .CountAsync(cancellationToken);
+    }
 }

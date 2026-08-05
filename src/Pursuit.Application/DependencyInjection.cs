@@ -18,6 +18,8 @@ public static class DependencyInjection
 
         services.AddScoped<IUserService, UserService>();
 
+        services.AddScoped<IStatsService, StatsService>();
+
         services.AddValidatorsFromAssemblyContaining<IJobService>();
 
         return services;

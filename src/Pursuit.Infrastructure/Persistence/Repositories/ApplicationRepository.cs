@@ -60,4 +60,11 @@ public class ApplicationRepository : Repository<Domain.Entities.Application>, IA
             .Include(a => a.Applicant)
             .FirstOrDefaultAsync(a => a.Id == id, cancellationToken);
     }
+
+    public async Task<int> CountAsync(CancellationToken cancellationToken = default)
+    {
+        return await _dbSet
+            .IgnoreQueryFilters()
+            .CountAsync(cancellationToken);
+    }
 }

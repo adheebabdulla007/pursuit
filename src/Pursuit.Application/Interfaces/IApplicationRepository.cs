@@ -25,4 +25,6 @@ public interface IApplicationRepository : IRepository<Domain.Entities.Applicatio
     Task<Domain.Entities.Application?> GetByIdWithDetailsAsync(
     Guid id,
     CancellationToken cancellationToken = default);
+
+    Task<int> CountAsync(CancellationToken cancellationToken = default);
 }
