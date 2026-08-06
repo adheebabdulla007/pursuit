@@ -90,6 +90,9 @@ public sealed class AuthService : IAuthService
         if (!_passwordHasher.Verify(dto.Password, user.PasswordHash))
             throw new UnauthorizedAccessException("Invalid email or password.");
 
+        if (!user.IsActive)
+            throw new UnauthorizedAccessException("This account has been deactivated.");
+
         var token = _tokenService.GenerateToken(user);
 
         return new AuthResponseDto
