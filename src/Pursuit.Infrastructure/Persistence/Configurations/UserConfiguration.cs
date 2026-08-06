@@ -36,5 +36,9 @@ public class UserConfiguration : IEntityTypeConfiguration<User>
             .HasForeignKey(u => u.TenantId)
             .IsRequired(false)
             .OnDelete(DeleteBehavior.Restrict);
+
+        builder.Property(u => u.IsActive)
+            .IsRequired()
+            .HasDefaultValue(true);
     }
 }
