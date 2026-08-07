@@ -18,4 +18,6 @@ public interface IUserRepository : IRepository<User>
     Task<int> CountAsync(CancellationToken cancellationToken = default);
 
     Task<int> CountByRoleAsync(UserRole role, CancellationToken cancellationToken = default);
+
+    Task<User?> GetByIdIgnoringFiltersAsync(Guid id, CancellationToken cancellationToken = default);
 }

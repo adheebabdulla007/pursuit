@@ -11,4 +11,5 @@ public class UserDto
     public UserRole Role { get; set; }
     public Guid? TenantId { get; set; }
     public DateTime CreatedAt { get; set; }
+    public bool IsActive { get; set; }
 }

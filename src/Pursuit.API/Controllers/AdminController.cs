@@ -1,6 +1,7 @@
 ﻿using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Pursuit.Application.Interfaces;
+using Pursuit.Application.DTOs;
 
 namespace Pursuit.API.Controllers;
 
@@ -33,5 +34,12 @@ public sealed class AdminController : ControllerBase
     {
         var stats = await _statsService.GetStatsAsync(cancellationToken);
         return Ok(stats);
+    }
+
+    [HttpPatch("users/{id:guid}/status")]
+    public async Task<IActionResult> UpdateUserStatus(Guid id, [FromBody] UpdateUserStatusDto dto, CancellationToken cancellationToken)
+    {
+        await _userService.SetUserStatusAsync(id, dto.IsActive, cancellationToken);
+        return NoContent();
     }
 }

@@ -64,4 +64,11 @@ public sealed class UserRepository : Repository<User>, IUserRepository
             .Where(u => u.Role == role)
             .CountAsync(cancellationToken);
     }
+
+    public async Task<User?> GetByIdIgnoringFiltersAsync(Guid id, CancellationToken cancellationToken = default)
+    {
+        return await _dbSet
+            .IgnoreQueryFilters()
+            .FirstOrDefaultAsync(u => u.Id == id, cancellationToken);
+    }
 }
