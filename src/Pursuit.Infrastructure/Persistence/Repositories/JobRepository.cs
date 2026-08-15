@@ -12,6 +12,13 @@ public class JobRepository : Repository<Job>, IJobRepository
     {
     }
 
+    public new async Task<Job?> GetByIdAsync(Guid id, CancellationToken cancellationToken = default)
+    {
+        return await _dbSet
+            .Include(j => j.Tenant)
+            .FirstOrDefaultAsync(j => j.Id == id, cancellationToken);
+    }
+
     public async Task<IReadOnlyList<Job>> SearchAsync(
         string? title,
         string? location,
@@ -20,7 +27,7 @@ public class JobRepository : Repository<Job>, IJobRepository
         int pageSize,
         CancellationToken cancellationToken = default)
     {
-        var query = _dbSet.AsQueryable();
+        var query = _dbSet.Include(j => j.Tenant).AsQueryable();
 
         if (!string.IsNullOrWhiteSpace(title))
             query = query.Where(j => j.Title.Contains(title));
@@ -44,7 +51,7 @@ public class JobRepository : Repository<Job>, IJobRepository
         JobType? jobType,
         CancellationToken cancellationToken = default)
     {
-        var query = _dbSet.AsQueryable();
+        var query = _dbSet.Include(j => j.Tenant).AsQueryable();
 
         if (!string.IsNullOrWhiteSpace(title))
             query = query.Where(j => j.Title.Contains(title));
@@ -63,6 +70,7 @@ public class JobRepository : Repository<Job>, IJobRepository
         CancellationToken cancellationToken = default)
     {
         return await _dbSet
+            .Include(j => j.Tenant)
             .Where(j => j.TenantId == tenantId)
             .ToListAsync(cancellationToken);
     }

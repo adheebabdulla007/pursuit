@@ -59,6 +59,16 @@ try
         };
     });
 
+    builder.Services.AddCors(options =>
+    {
+        options.AddPolicy("AllowReactDev", policy =>
+        {
+            policy.WithOrigins("http://localhost:5173")
+                  .AllowAnyMethod()
+                  .AllowAnyHeader();
+        });
+    });
+
     var app = builder.Build();
 
     using (var scope = app.Services.CreateScope())
@@ -83,6 +93,7 @@ try
 
     app.UseSerilogRequestLogging();
     app.UseMiddleware<ExceptionMiddleware>();
+    app.UseCors("AllowReactDev");
     app.UseAuthentication();
     app.UseAuthorization();
     app.MapControllers();

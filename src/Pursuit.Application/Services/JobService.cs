@@ -85,7 +85,10 @@ public class JobService : IJobService
         await _jobRepository.AddAsync(job, cancellationToken);
         await _cacheService.RemoveByPrefixAsync(SearchCacheKeyPrefix, cancellationToken);
 
-        return MapToDto(job);
+        var created = await _jobRepository.GetByIdAsync(job.Id, cancellationToken)
+            ?? throw new InvalidOperationException("Job was created but could not be reloaded.");
+
+        return MapToDto(created);
     }
 
     public async Task<JobDto> UpdateAsync(Guid id, UpdateJobDto dto, CancellationToken cancellationToken = default)
@@ -137,6 +140,7 @@ public class JobService : IJobService
         Id = job.Id,
         TenantId = job.TenantId,
         Title = job.Title,
+        CompanyName = job.Tenant.Name,
         Description = job.Description,
         Location = job.Location,
         SalaryMin = job.SalaryMin,
