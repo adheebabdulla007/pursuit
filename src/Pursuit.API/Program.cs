@@ -57,6 +57,17 @@ try
                 Encoding.UTF8.GetBytes(
                     builder.Configuration["JwtSettings:Secret"]!))
         };
+        options.Events = new JwtBearerEvents
+        {
+            OnMessageReceived = context =>
+            {
+                if (context.Request.Cookies.TryGetValue("pursuit_token", out var token))
+                {
+                    context.Token = token;
+                }
+                return Task.CompletedTask;
+            }
+        };
     });
 
     builder.Services.AddCors(options =>
@@ -65,7 +76,8 @@ try
         {
             policy.WithOrigins("http://localhost:5173")
                   .AllowAnyMethod()
-                  .AllowAnyHeader();
+                  .AllowAnyHeader()
+                  .AllowCredentials();
         });
     });
 
