@@ -1,6 +1,15 @@
-import type { LoginRequest, CurrentUser } from '../types/auth'
+import type { LoginRequest, RegisterRequest, CurrentUser } from '../types/auth'
 
 const API_BASE_URL = 'http://localhost:5146'
+
+async function extractErrorMessage(response: Response): Promise<string> {
+  try {
+    const body = await response.json()
+    return body.message ?? `Request failed: ${response.status}`
+  } catch {
+    return `Request failed: ${response.status}`
+  }
+}
 
 export async function login(credentials: LoginRequest): Promise<CurrentUser> {
   const response = await fetch(`${API_BASE_URL}/api/auth/login`, {
@@ -13,10 +22,27 @@ export async function login(credentials: LoginRequest): Promise<CurrentUser> {
   })
 
   if (!response.ok) {
-    throw new Error(`Login failed: ${response.status}`)
+    throw new Error(await extractErrorMessage(response))
   }
 
-  return response.json()
+  return getMe()
+}
+
+export async function register(data: RegisterRequest): Promise<CurrentUser> {
+  const response = await fetch(`${API_BASE_URL}/api/auth/register`, {
+    method: 'POST',
+    credentials: 'include',
+    headers: {
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify(data),
+  })
+
+  if (!response.ok) {
+    throw new Error(await extractErrorMessage(response))
+  }
+
+  return getMe()
 }
 
 export async function logout(): Promise<void> {
