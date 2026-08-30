@@ -1,15 +1,20 @@
+import { Link } from 'react-router-dom'
+
 type JobCardProps = {
+  id: string
   title: string
   companyName: string
   location: string
 }
 
-function JobCard({ title, companyName, location }: JobCardProps) {
+function JobCard({ id, title, companyName, location }: JobCardProps) {
   return (
-    <div>
-      <h1>{title}</h1>
-      <p>{companyName} | {location}</p>
-    </div>
+    <Link to={`/jobs/${id}`}>
+      <div>
+        <h1>{title}</h1>
+        <p>{companyName} | {location}</p>
+      </div>
+    </Link>
   )
 }
 

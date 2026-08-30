@@ -22,6 +22,7 @@ function JobsPage() {
       {data?.items.map((job) => (
         <JobCard
           key={job.id}
+          id={job.id}
           title={job.title}
           companyName={job.companyName}
           location={job.location}
