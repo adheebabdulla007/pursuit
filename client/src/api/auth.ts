@@ -1,14 +1,6 @@
 import type { LoginRequest, RegisterRequest, CurrentUser } from '../types/auth'
 import { API_BASE_URL } from '../config/env'
-
-async function extractErrorMessage(response: Response): Promise<string> {
-  try {
-    const body = await response.json()
-    return body.message ?? `Request failed: ${response.status}`
-  } catch {
-    return `Request failed: ${response.status}`
-  }
-}
+import { extractErrorMessage } from './shared'
 
 export async function login(credentials: LoginRequest): Promise<CurrentUser> {
   const response = await fetch(`${API_BASE_URL}/api/auth/login`, {

@@ -20,3 +20,12 @@ export type PagedResult<T> = {
   page: number
   pageSize: number
 }
+
+export type CreateJobRequest = {
+  title: string
+  description: string
+  location: string
+  salaryMin: number
+  salaryMax: number
+  jobType: JobType
+}

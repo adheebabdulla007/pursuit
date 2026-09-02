@@ -1,5 +1,6 @@
-import type { Job, JobType, PagedResult } from '../types/job'
+import type { Job, JobType, PagedResult, CreateJobRequest } from '../types/job'
 import { API_BASE_URL } from '../config/env'
+import { extractErrorMessage } from './shared'
 
 export type JobSearchParams = {
   page?: number
@@ -37,5 +38,16 @@ export async function fetchJobById(id: string): Promise<Job> {
     throw new Error(`Failed to fetch job: ${response.status}`)
   }
 
+  return response.json()
+}
+
+export async function createJob(data: CreateJobRequest): Promise<Job> {
+  const response = await fetch(`${API_BASE_URL}/api/jobs`, {
+    method: 'POST',
+    credentials: 'include',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(data),
+  })
+  if (!response.ok) throw new Error(await extractErrorMessage(response))
   return response.json()
 }

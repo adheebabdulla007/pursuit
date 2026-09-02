@@ -5,6 +5,8 @@ import JobsPage from './pages/JobsPage'
 import JobDetailPage from './pages/JobDetailPage'
 import LoginPage from './pages/LoginPage'
 import RegisterPage from './pages/RegisterPage'
+import CreateJobPage from './pages/CreateJobPage'
+import ProtectedRoute from './context/ProtectedRoute'
 
 function App() {
   return (
@@ -14,6 +16,14 @@ function App() {
         <Route path="/" element={<HomePage />} />
         <Route path="/jobs" element={<JobsPage />} />
         <Route path="/jobs/:id" element={<JobDetailPage />} />
+        <Route
+          path="/jobs/new"
+          element={
+            <ProtectedRoute requiredRole="Employer">
+              <CreateJobPage />
+            </ProtectedRoute>
+          }
+        />
         <Route path="/login" element={<LoginPage />} />
         <Route path="/register" element={<RegisterPage />} />
       </Routes>

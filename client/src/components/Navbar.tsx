@@ -15,8 +15,9 @@ function Navbar() {
       <Link to="/">Pursuit</Link>
       <Link to="/jobs">Jobs</Link>
 
-      {isLoading ? null : user ? (
+        {isLoading ? null : user ? (
         <>
+          {user.role === 'Employer' && <Link to="/jobs/new">Post a Job</Link>}
           <span>{user.email} ({user.role})</span>
           <button onClick={handleLogout}>Logout</button>
         </>
