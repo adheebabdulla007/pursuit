@@ -18,8 +18,8 @@ function LoginPage() {
     try {
       await login({ email, password })
       navigate('/jobs')
-    } catch (err) {
-      setError('Login failed. Check your credentials.')
+        } catch (err) {
+      setError(err instanceof Error ? err.message : 'Login failed. Check your credentials.')
       console.error(err)
     } finally {
       setIsLoading(false)
