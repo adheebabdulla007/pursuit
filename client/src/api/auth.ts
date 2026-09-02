@@ -1,6 +1,5 @@
 import type { LoginRequest, RegisterRequest, CurrentUser } from '../types/auth'
-
-const API_BASE_URL = 'http://localhost:5146'
+import { API_BASE_URL } from '../config/env'
 
 async function extractErrorMessage(response: Response): Promise<string> {
   try {

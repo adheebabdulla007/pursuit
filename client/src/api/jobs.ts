@@ -1,6 +1,5 @@
 import type { Job, PagedResult } from '../types/job'
-
-const API_BASE_URL = 'http://localhost:5146'
+import { API_BASE_URL } from '../config/env'
 
 export async function fetchJobs(page: number = 1, pageSize: number = 10): Promise<PagedResult<Job>> {
   const response = await fetch(
