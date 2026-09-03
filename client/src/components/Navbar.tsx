@@ -18,6 +18,7 @@ function Navbar() {
         {isLoading ? null : user ? (
         <>
           {user.role === 'Employer' && <Link to="/jobs/new">Post a Job</Link>}
+          {user.role === 'Admin' && <Link to="/admin">Admin</Link>}
           <span>{user.email} ({user.role})</span>
           <button onClick={handleLogout}>Logout</button>
         </>

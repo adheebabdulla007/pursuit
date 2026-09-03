@@ -6,6 +6,7 @@ import JobDetailPage from './pages/JobDetailPage'
 import LoginPage from './pages/LoginPage'
 import RegisterPage from './pages/RegisterPage'
 import CreateJobPage from './pages/CreateJobPage'
+import AdminPage from './pages/AdminPage'
 import ProtectedRoute from './context/ProtectedRoute'
 
 function App() {
@@ -21,6 +22,14 @@ function App() {
           element={
             <ProtectedRoute requiredRole="Employer">
               <CreateJobPage />
+            </ProtectedRoute>
+          }
+        />
+         <Route
+          path="/admin"
+          element={
+            <ProtectedRoute requiredRole="Admin">
+              <AdminPage />
             </ProtectedRoute>
           }
         />
