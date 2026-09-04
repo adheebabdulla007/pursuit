@@ -20,7 +20,7 @@ function LoginPage() {
     try {
       await login({ email, password })
       navigate('/jobs')
-        } catch (err) {
+    } catch (err) {
       setError(err instanceof Error ? err.message : 'Login failed. Check your credentials.')
       console.error(err)
     } finally {
@@ -29,29 +29,40 @@ function LoginPage() {
   }
 
   return (
-    <div>
-      <h1>Login</h1>
-      <form onSubmit={handleSubmit}>
-        <Input
-          id="email"
-          label="Email"
-          type="email"
-          value={email}
-          onChange={(e) => setEmail(e.target.value)}
-        />
-        <Input
-          id="password"
-          label="Password"
-          type="password"
-          value={password}
-          onChange={(e) => setPassword(e.target.value)}
-        />
-        {error && <p style={{ color: 'red' }}>{error}</p>}
-        <Button type="submit" disabled={isLoading}>
-          {isLoading ? 'Logging in...' : 'Log In'}
-        </Button>
-        <p> Don't have an account? <Link to="/register">Register</Link></p>
-      </form>
+    <div className="min-h-screen flex items-center justify-center bg-neutral-50 px-4">
+      <div className="w-full max-w-md bg-white rounded-lg shadow p-8">
+        <h1 className="text-2xl font-semibold text-neutral-900 mb-6">Login</h1>
+        <form onSubmit={handleSubmit} className="flex flex-col gap-4">
+          <Input
+            id="email"
+            label="Email"
+            type="email"
+            value={email}
+            onChange={(e) => setEmail(e.target.value)}
+          />
+          <Input
+            id="password"
+            label="Password"
+            type="password"
+            value={password}
+            onChange={(e) => setPassword(e.target.value)}
+          />
+          {error && (
+            <p className="bg-red-50 border border-red-200 text-red-700 rounded-md p-3 text-sm">
+              {error}
+            </p>
+          )}
+          <Button type="submit" disabled={isLoading} className="w-full">
+            {isLoading ? 'Logging in...' : 'Log In'}
+          </Button>
+          <p className="text-sm text-neutral-600 text-center">
+            Don't have an account?{' '}
+            <Link to="/register" className="text-primary-600 hover:underline">
+              Register
+            </Link>
+          </p>
+        </form>
+      </div>
     </div>
   )
 }
