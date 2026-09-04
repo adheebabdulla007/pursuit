@@ -2,6 +2,7 @@ import { useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import { useAuth } from '../context/AuthContext'
 import { Button } from '../components/ui/Button'
+import { Input } from '../components/ui/Input'
 
 function LoginPage() {
   const [email, setEmail] = useState('')
@@ -31,28 +32,24 @@ function LoginPage() {
     <div>
       <h1>Login</h1>
       <form onSubmit={handleSubmit}>
-        <div>
-          <label htmlFor="email">Email</label>
-          <input
-            id="email"
-            type="email"
-            value={email}
-            onChange={(e) => setEmail(e.target.value)}
-          />
-        </div>
-        <div>
-          <label htmlFor="password">Password</label>
-          <input
-            id="password"
-            type="password"
-            value={password}
-            onChange={(e) => setPassword(e.target.value)}
-          />
-        </div>
+        <Input
+          id="email"
+          label="Email"
+          type="email"
+          value={email}
+          onChange={(e) => setEmail(e.target.value)}
+        />
+        <Input
+          id="password"
+          label="Password"
+          type="password"
+          value={password}
+          onChange={(e) => setPassword(e.target.value)}
+        />
         {error && <p style={{ color: 'red' }}>{error}</p>}
         <Button type="submit" disabled={isLoading}>
-  {isLoading ? 'Logging in...' : 'Log In'}
-</Button>
+          {isLoading ? 'Logging in...' : 'Log In'}
+        </Button>
         <p> Don't have an account? <Link to="/register">Register</Link></p>
       </form>
     </div>
