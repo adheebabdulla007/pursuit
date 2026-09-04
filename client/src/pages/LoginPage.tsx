@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import { useAuth } from '../context/AuthContext'
+import { Button } from '../components/ui/Button'
 
 function LoginPage() {
   const [email, setEmail] = useState('')
@@ -49,9 +50,9 @@ function LoginPage() {
           />
         </div>
         {error && <p style={{ color: 'red' }}>{error}</p>}
-        <button type="submit" disabled={isLoading}>
-          {isLoading ? 'Logging in...' : 'Log In'}
-        </button>
+        <Button type="submit" disabled={isLoading}>
+  {isLoading ? 'Logging in...' : 'Log In'}
+</Button>
         <p> Don't have an account? <Link to="/register">Register</Link></p>
       </form>
     </div>
