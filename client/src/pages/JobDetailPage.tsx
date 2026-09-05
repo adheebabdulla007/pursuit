@@ -4,6 +4,8 @@ import { useQuery } from '@tanstack/react-query'
 import { fetchJobById } from '../api/jobs'
 import { applyToJob } from '../api/applications'
 import { useAuth } from '../context/AuthContext'
+import { Card } from '../components/ui/Card'
+import { Button } from '../components/ui/Button'
 
 const ALLOWED_TYPES = [
   'application/pdf',
@@ -69,54 +71,104 @@ function JobDetailPage() {
   }
 
   if (isLoading) {
-    return <p>Loading job...</p>
+    return (
+      <div className="min-h-screen bg-neutral-50 px-4 py-8">
+        <p className="max-w-3xl mx-auto text-neutral-600">Loading job...</p>
+      </div>
+    )
   }
 
   if (isError) {
     if (error.message === 'NOT_FOUND') {
       return (
-        <div>
-          <p>This job could not be found.</p>
-          <Link to="/jobs">Back to jobs</Link>
+        <div className="min-h-screen bg-neutral-50 px-4 py-8">
+          <div className="max-w-3xl mx-auto">
+            <p className="text-neutral-700 mb-4">This job could not be found.</p>
+            <Link to="/jobs" className="text-primary-600 hover:underline">
+              Back to jobs
+            </Link>
+          </div>
         </div>
       )
     }
-    return <p>Error loading job: {error.message}</p>
+    return (
+      <div className="min-h-screen bg-neutral-50 px-4 py-8">
+        <p className="max-w-3xl mx-auto bg-red-50 border border-red-200 text-red-700 rounded-md p-3 text-sm">
+          Error loading job: {error.message}
+        </p>
+      </div>
+    )
   }
 
   return (
-    <div>
-      <h1>{data?.title}</h1>
-      <p>{data?.companyName} | {data?.location}</p>
-      <p>{data?.jobType}</p>
-      <p>${data?.salaryMin.toLocaleString()} – ${data?.salaryMax.toLocaleString()}</p>
-      <p>{data?.description}</p>
+    <div className="min-h-screen bg-neutral-50 px-4 py-8">
+      <div className="max-w-3xl mx-auto">
+        <Link to="/jobs" className="text-sm text-primary-600 hover:underline mb-4 inline-block">
+          ← Back to jobs
+        </Link>
 
-      {user?.role === 'JobSeeker' && (
-        <div>
-          {hasApplied ? (
-            <p>Application submitted.</p>
-          ) : (
-            <form onSubmit={handleApply}>
-              <label htmlFor="resume">Resume (PDF or DOCX, max 5MB)</label>
-              <input id="resume" type="file" accept=".pdf,.docx" onChange={handleFileChange} />
-              {fileError && <p style={{ color: 'red' }}>{fileError}</p>}
-              {applyError && <p style={{ color: 'red' }}>{applyError}</p>}
-              <button type="submit" disabled={!resumeFile || isSubmitting}>
-                {isSubmitting ? 'Submitting...' : 'Apply'}
-              </button>
-            </form>
-          )}
-        </div>
-      )}
+        <Card className="mb-6">
+          <h1 className="text-2xl font-semibold text-neutral-900">{data?.title}</h1>
+          <p className="text-neutral-600 mt-1">
+            {data?.companyName} · {data?.location}
+          </p>
+          <p className="text-sm text-neutral-500 mt-1">{data?.jobType}</p>
+          <p className="text-sm font-medium text-neutral-700 mt-2">
+            ${data?.salaryMin.toLocaleString()} – ${data?.salaryMax.toLocaleString()}
+          </p>
+          <p className="text-neutral-700 mt-4 whitespace-pre-line">{data?.description}</p>
+        </Card>
 
-      {!user && (
-        <p>
-          <Link to="/login">Log in</Link> as a job seeker to apply.
-        </p>
-      )}
+        {user?.role === 'JobSeeker' && (
+          <Card>
+            {hasApplied ? (
+              <p className="bg-green-50 border border-green-200 text-green-700 rounded-md p-3 text-sm">
+                Application submitted.
+              </p>
+            ) : (
+              <form onSubmit={handleApply} className="flex flex-col gap-4">
+                <div className="flex flex-col gap-1">
+                  <label htmlFor="resume" className="text-sm font-medium text-neutral-700">
+                    Resume (PDF or DOCX, max 5MB)
+                  </label>
+                  <input
+                    id="resume"
+                    type="file"
+                    accept=".pdf,.docx"
+                    onChange={handleFileChange}
+                    className="text-sm text-neutral-600
+                      file:mr-4 file:py-2 file:px-4 file:rounded-md file:border-0
+                      file:bg-primary-50 file:text-primary-700 file:text-sm file:font-medium
+                      hover:file:bg-primary-100"
+                  />
+                </div>
+                {fileError && (
+                  <p className="bg-red-50 border border-red-200 text-red-700 rounded-md p-3 text-sm">
+                    {fileError}
+                  </p>
+                )}
+                {applyError && (
+                  <p className="bg-red-50 border border-red-200 text-red-700 rounded-md p-3 text-sm">
+                    {applyError}
+                  </p>
+                )}
+                <Button type="submit" disabled={!resumeFile || isSubmitting}>
+                  {isSubmitting ? 'Submitting...' : 'Apply'}
+                </Button>
+              </form>
+            )}
+          </Card>
+        )}
 
-      <Link to="/jobs">Back to jobs</Link>
+        {!user && (
+          <p className="text-neutral-600">
+            <Link to="/login" className="text-primary-600 hover:underline">
+              Log in
+            </Link>{' '}
+            as a job seeker to apply.
+          </p>
+        )}
+      </div>
     </div>
   )
 }
