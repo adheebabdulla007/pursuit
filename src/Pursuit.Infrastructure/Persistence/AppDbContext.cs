@@ -27,6 +27,11 @@ public class AppDbContext : DbContext
 
         modelBuilder.ApplyConfigurationsFromAssembly(typeof(AppDbContext).Assembly);
 
+        // Defense-in-depth: guards any future call site that queries Users without
+        // IgnoreQueryFilters(). Currently no live path exercises the TenantId-comparison
+        // branch — the one filtered call (ApplicationService.PublishApplicationSubmittedAsync)
+        // always resolves via the TenantId == null clause since applicants are job seekers.
+
         modelBuilder.Entity<User>()
             .HasQueryFilter(u =>
                 u.TenantId == null
