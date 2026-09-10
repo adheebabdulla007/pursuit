@@ -41,23 +41,22 @@ public static class DependencyInjection
         var redisConnectionString = configuration["RedisSettings:ConnectionString"]
             ?? throw new InvalidOperationException("RedisSettings:ConnectionString is not configured.");
 
-        services.AddSingleton<IConnectionMultiplexer>(
-            ConnectionMultiplexer.Connect(redisConnectionString));
+        var redisOptions = ConfigurationOptions.Parse(redisConnectionString);
+        redisOptions.AbortOnConnectFail = false;
+
+        services.AddSingleton<IConnectionMultiplexer>(sp =>
+            ConnectionMultiplexer.Connect(redisOptions));
 
         services.AddSingleton<ICacheService, RedisCacheService>();
 
-        services.AddSingleton<IConnection>(sp =>
+        services.AddSingleton<IConnectionFactory>(_ => new ConnectionFactory
         {
-            var factory = new ConnectionFactory
-            {
-                HostName = configuration["RabbitMqSettings:Host"] ?? "localhost",
-                Port = int.Parse(configuration["RabbitMqSettings:Port"] ?? "5672"),
-                UserName = configuration["RabbitMqSettings:Username"] ?? "guest",
-                Password = configuration["RabbitMqSettings:Password"] ?? "guest"
-            };
-
-            return factory.CreateConnectionAsync().GetAwaiter().GetResult();
+            HostName = configuration["RabbitMqSettings:Host"] ?? "localhost",
+            Port = int.Parse(configuration["RabbitMqSettings:Port"] ?? "5672"),
+            UserName = configuration["RabbitMqSettings:Username"] ?? "guest",
+            Password = configuration["RabbitMqSettings:Password"] ?? "guest"
         });
+        services.AddSingleton<IRabbitMqConnectionProvider, RabbitMqConnectionProvider>();
 
         services.AddScoped<IMessagePublisher, RabbitMqPublisher>();
         services.AddHostedService<ApplicationSubmittedConsumer>();

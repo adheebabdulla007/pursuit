@@ -14,19 +14,20 @@ public sealed class ApplicationSubmittedConsumer : BackgroundService
     private const string QueueName = "application.submitted";
     private const string RoutingKey = "application.submitted";
 
-    private readonly IConnection _connection;
+    private readonly IRabbitMqConnectionProvider _connectionProvider;
     private readonly ILogger<ApplicationSubmittedConsumer> _logger;
     private IChannel? _channel;
 
-    public ApplicationSubmittedConsumer(IConnection connection, ILogger<ApplicationSubmittedConsumer> logger)
+    public ApplicationSubmittedConsumer(IRabbitMqConnectionProvider connectionProvider, ILogger<ApplicationSubmittedConsumer> logger)
     {
-        _connection = connection;
+        _connectionProvider = connectionProvider;
         _logger = logger;
     }
 
     protected override async Task ExecuteAsync(CancellationToken stoppingToken)
     {
-        _channel = await _connection.CreateChannelAsync(cancellationToken: stoppingToken);
+        var connection = await ConnectWithRetryAsync(stoppingToken);
+        _channel = await connection.CreateChannelAsync(cancellationToken: stoppingToken);
 
         await _channel.ExchangeDeclareAsync(
             exchange: ExchangeName,
@@ -98,6 +99,28 @@ public sealed class ApplicationSubmittedConsumer : BackgroundService
         {
             // stoppingToken cancelled — application is shutting down, exit cleanly
         }
+    }
+
+    private async Task<IConnection> ConnectWithRetryAsync(CancellationToken stoppingToken)
+    {
+        var delay = TimeSpan.FromSeconds(2);
+        const int maxDelaySeconds = 30;
+
+        while (!stoppingToken.IsCancellationRequested)
+        {
+            try
+            {
+                return await _connectionProvider.GetConnectionAsync(stoppingToken);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogWarning(ex, "RabbitMQ connection failed, retrying in {Delay}s.", delay.TotalSeconds);
+                await Task.Delay(delay, stoppingToken);
+                delay = TimeSpan.FromSeconds(Math.Min(delay.TotalSeconds * 2, maxDelaySeconds));
+            }
+        }
+
+        throw new OperationCanceledException(stoppingToken);
     }
 
     public override async Task StopAsync(CancellationToken cancellationToken)

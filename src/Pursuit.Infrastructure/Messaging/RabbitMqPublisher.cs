@@ -13,12 +13,12 @@ public sealed class RabbitMqPublisher : IMessagePublisher
     private const string QueueName = "application.submitted";
     private const string RoutingKey = "application.submitted";
 
-    private readonly IConnection _connection;
+    private readonly IRabbitMqConnectionProvider _connectionProvider;
     private readonly ILogger<RabbitMqPublisher> _logger;
 
-    public RabbitMqPublisher(IConnection connection, ILogger<RabbitMqPublisher> logger)
+    public RabbitMqPublisher(IRabbitMqConnectionProvider connectionProvider, ILogger<RabbitMqPublisher> logger)
     {
-        _connection = connection;
+        _connectionProvider = connectionProvider;
         _logger = logger;
     }
 
@@ -26,7 +26,8 @@ public sealed class RabbitMqPublisher : IMessagePublisher
     {
         try
         {
-            await using var channel = await _connection.CreateChannelAsync(cancellationToken: cancellationToken);
+            var connection = await _connectionProvider.GetConnectionAsync(cancellationToken);
+            await using var channel = await connection.CreateChannelAsync(cancellationToken: cancellationToken);
 
             await channel.ExchangeDeclareAsync(
                 exchange: ExchangeName,
