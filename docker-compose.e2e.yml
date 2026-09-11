@@ -1,4 +1,6 @@
-﻿services:
+name: pursuit-e2e
+
+services:
 
   sqlserver-e2e:
     image: mcr.microsoft.com/mssql/server:2022-latest
