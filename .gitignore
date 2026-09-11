@@ -485,3 +485,5 @@ $RECYCLE.BIN/
 appsettings.Development.json
 appsettings.Production.json
 .env
+appsettings.E2E.json
+!client/.env.e2e
