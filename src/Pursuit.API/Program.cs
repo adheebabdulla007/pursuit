@@ -37,6 +37,7 @@ try
     builder.Services.AddOpenApi();
     builder.Services.AddInfrastructure(builder.Configuration);
     builder.Services.AddApplication();
+    builder.Services.AddHealthChecks();
 
     builder.Services.AddAuthentication(options =>
     {
@@ -103,6 +104,7 @@ try
     app.UseAuthentication();
     app.UseAuthorization();
     app.MapControllers();
+    app.MapHealthChecks("/health");
 
     await app.RunAsync();
 }
