@@ -30,10 +30,6 @@ public sealed class ExceptionMiddleware
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "Unhandled exception for {Method} {Path}",
-                context.Request.Method,
-                context.Request.Path);
-
             await HandleExceptionAsync(context, ex);
         }
     }
@@ -42,15 +38,31 @@ public sealed class ExceptionMiddleware
     {
         context.Response.ContentType = "application/json";
 
-        var (statusCode, message) = exception switch
+        var (statusCode, message, logLevel) = exception switch
         {
-            KeyNotFoundException => (HttpStatusCode.NotFound, exception.Message),
-            UnauthorizedAccessException => (HttpStatusCode.Unauthorized, exception.Message),
-            ForbiddenAccessException => (HttpStatusCode.Forbidden, exception.Message),
-            InvalidOperationException => (HttpStatusCode.BadRequest, exception.Message),
-            ArgumentException => (HttpStatusCode.BadRequest, exception.Message),
-            _ => (HttpStatusCode.InternalServerError, "An unexpected error occurred.")
+            KeyNotFoundException => (HttpStatusCode.NotFound, exception.Message, LogLevel.Warning),
+            UnauthorizedAccessException => (HttpStatusCode.Unauthorized, exception.Message, LogLevel.Warning),
+            ForbiddenAccessException => (HttpStatusCode.Forbidden, exception.Message, LogLevel.Warning),
+            InvalidOperationException => (HttpStatusCode.BadRequest, exception.Message, LogLevel.Warning),
+            ArgumentException => (HttpStatusCode.BadRequest, exception.Message, LogLevel.Warning),
+            _ => (HttpStatusCode.InternalServerError, "An unexpected error occurred.", LogLevel.Error)
         };
+
+        if (logLevel == LogLevel.Error)
+        {
+            _logger.LogError(exception, "Unhandled exception for {Method} {Path}",
+                context.Request.Method,
+                context.Request.Path);
+        }
+        else
+        {
+            _logger.Log(logLevel, "Handled {ExceptionType} ({StatusCode}) for {Method} {Path}: {Message}",
+                exception.GetType().Name,
+                (int)statusCode,
+                context.Request.Method,
+                context.Request.Path,
+                exception.Message);
+        }
 
         context.Response.StatusCode = (int)statusCode;
 
