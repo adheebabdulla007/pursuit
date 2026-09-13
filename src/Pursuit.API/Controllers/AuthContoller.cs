@@ -12,16 +12,13 @@ public sealed class AuthController : ControllerBase
 {
     private readonly IAuthService _authService;
     private readonly IConfiguration _configuration;
-    private readonly IWebHostEnvironment _environment;
 
     public AuthController(
         IAuthService authService,
-        IConfiguration configuration,
-        IWebHostEnvironment environment)
+        IConfiguration configuration)
     {
         _authService = authService;
         _configuration = configuration;
-        _environment = environment;
     }
 
     [HttpPost("register")]
@@ -61,7 +58,7 @@ public sealed class AuthController : ControllerBase
         Response.Cookies.Delete("pursuit_token", new CookieOptions
         {
             HttpOnly = true,
-            Secure = !_environment.IsDevelopment(),
+            Secure = Request.IsHttps,
             SameSite = SameSiteMode.Strict,
             Path = "/"
         });
@@ -75,7 +72,7 @@ public sealed class AuthController : ControllerBase
         Response.Cookies.Append("pursuit_token", token, new CookieOptions
         {
             HttpOnly = true,
-            Secure = !_environment.IsDevelopment(),
+            Secure = Request.IsHttps,
             SameSite = SameSiteMode.Strict,
             Expires = DateTimeOffset.UtcNow.AddMinutes(expiryMinutes)
         });
