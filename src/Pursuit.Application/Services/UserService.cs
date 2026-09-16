@@ -8,11 +8,16 @@ public class UserService : IUserService
 {
     private readonly IUserRepository _userRepository;
     private readonly ICurrentUserService _currentUserService;
+    private readonly IRefreshTokenRepository _refreshTokenRepository;
 
-    public UserService(IUserRepository userRepository, ICurrentUserService currentUserService)
+    public UserService(
+        IUserRepository userRepository,
+        ICurrentUserService currentUserService,
+        IRefreshTokenRepository refreshTokenRepository)
     {
         _userRepository = userRepository;
         _currentUserService = currentUserService;
+        _refreshTokenRepository = refreshTokenRepository;
     }
 
     public async Task<PagedResult<UserDto>> GetAllUsersAsync(int page, int pageSize, CancellationToken cancellationToken = default)
@@ -39,6 +44,9 @@ public class UserService : IUserService
         user.IsActive = isActive;
 
         await _userRepository.UpdateAsync(user, cancellationToken);
+
+        if (!isActive)
+            await _refreshTokenRepository.RevokeAllForUserAsync(userId, cancellationToken);
     }
 
     private static UserDto MapToDto(User user) => new()
