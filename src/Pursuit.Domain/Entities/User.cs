@@ -16,4 +16,5 @@ public class User : BaseEntity
     public Tenant? Tenant { get; set; }
 
     public ICollection<Application> Applications { get; set; } = new List<Application>();
+    public ICollection<RefreshToken> RefreshTokens { get; set; } = new List<RefreshToken>();
 }
