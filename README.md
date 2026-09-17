@@ -274,7 +274,7 @@ Create or modify `src/Pursuit.API/appsettings.Development.json`:
 - Never commit real secrets to version control
 - For production, use Azure Key Vault, AWS Secrets Manager, or environment variables
 - JWT secret must be at least 32 characters and cryptographically random
-
+- NEVER use TrustServerCertificate=true in production. Use proper TLS certificates.
 ### 4. Setup Optional Services (Redis & RabbitMQ)
 
 #### Redis (Optional - for caching)
