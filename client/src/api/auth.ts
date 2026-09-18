@@ -1,6 +1,7 @@
 import type { LoginRequest, RegisterRequest, CurrentUser } from '../types/auth'
 import { API_BASE_URL } from '../config/env'
 import { extractErrorMessage } from './shared'
+import { apiFetch } from './fetchClient'
 
 export async function login(credentials: LoginRequest): Promise<CurrentUser> {
   const response = await fetch(`${API_BASE_URL}/api/auth/login`, {
@@ -37,16 +38,13 @@ export async function register(data: RegisterRequest): Promise<CurrentUser> {
 }
 
 export async function logout(): Promise<void> {
-  await fetch(`${API_BASE_URL}/api/auth/logout`, {
+  await apiFetch(`${API_BASE_URL}/api/auth/logout`, {
     method: 'POST',
-    credentials: 'include',
   })
 }
 
 export async function getMe(): Promise<CurrentUser> {
-  const response = await fetch(`${API_BASE_URL}/api/auth/me`, {
-    credentials: 'include',
-  })
+  const response = await apiFetch(`${API_BASE_URL}/api/auth/me`, {}, { redirectOnFailure: false })
 
   if (!response.ok) {
     throw new Error('Not authenticated')

@@ -1,6 +1,7 @@
 import type { Job, JobType, PagedResult, CreateJobRequest } from '../types/job'
 import { API_BASE_URL } from '../config/env'
 import { extractErrorMessage } from './shared'
+import { apiFetch } from './fetchClient'
 
 export type JobSearchParams = {
   page?: number
@@ -18,17 +19,13 @@ export async function fetchJobs(params: JobSearchParams): Promise<PagedResult<Jo
   if (params.location) query.set('location', params.location)
   if (params.jobType) query.set('jobType', params.jobType)
 
-  const response = await fetch(`${API_BASE_URL}/api/jobs?${query.toString()}`, {
-    credentials: 'include',
-  })
+  const response = await apiFetch(`${API_BASE_URL}/api/jobs?${query.toString()}`)
   if (!response.ok) throw new Error(`Failed to fetch jobs: ${response.status}`)
   return response.json()
 }
 
 export async function fetchJobById(id: string): Promise<Job> {
-  const response = await fetch(`${API_BASE_URL}/api/jobs/${id}`, {
-    credentials: 'include',
-  })
+  const response = await apiFetch(`${API_BASE_URL}/api/jobs/${id}`)
 
   if (response.status === 404) {
     throw new Error('NOT_FOUND')
@@ -42,9 +39,8 @@ export async function fetchJobById(id: string): Promise<Job> {
 }
 
 export async function createJob(data: CreateJobRequest): Promise<Job> {
-  const response = await fetch(`${API_BASE_URL}/api/jobs`, {
+  const response = await apiFetch(`${API_BASE_URL}/api/jobs`, {
     method: 'POST',
-    credentials: 'include',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify(data),
   })

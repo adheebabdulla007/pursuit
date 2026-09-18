@@ -41,39 +41,42 @@ beforeEach(() => {
 
 describe('LoginPage', () => {
   it('logs in successfully and navigates to /jobs', async () => {
-    mockFetchSequence([
-      // mount-time getMe() inside AuthProvider — not authenticated yet
-      () => jsonResponse({ message: 'Not authenticated' }, 401),
-      // POST /api/auth/login — body unused by login(), only .ok is checked
-      () => jsonResponse({}, 200),
-      // post-login getMe() — returns the real user
-      () => jsonResponse({ id: '1', email: 'user@test.com', role: 'JobSeeker', tenantId: null }, 200),
-    ])
+  mockFetchSequence([
+    // mount-time getMe() inside AuthProvider — not authenticated yet
+    () => jsonResponse({ message: 'Not authenticated' }, 401),
+    // mount-triggered refresh attempt from apiFetch — no valid session, fails
+    () => jsonResponse({}, 401),
+    // POST /api/auth/login — body unused by login(), only .ok is checked
+    () => jsonResponse({}, 200),
+    // post-login getMe() — returns the real user
+    () => jsonResponse({ id: '1', email: 'user@test.com', role: 'JobSeeker', tenantId: null }, 200),
+  ])
 
-    renderLoginPage()
-    const user = userEvent.setup()
+  renderLoginPage()
+  const user = userEvent.setup()
 
-    await user.type(await screen.findByLabelText('Email'), 'user@test.com')
-    await user.type(screen.getByLabelText('Password'), 'password123')
-    await user.click(screen.getByRole('button', { name: /log in/i }))
+  await user.type(await screen.findByLabelText('Email'), 'user@test.com')
+  await user.type(screen.getByLabelText('Password'), 'password123')
+  await user.click(screen.getByRole('button', { name: /log in/i }))
 
-    expect(await screen.findByText('Jobs Page Stub')).toBeInTheDocument()
-  })
+  expect(await screen.findByText('Jobs Page Stub')).toBeInTheDocument()
+})
 
-  it('shows an error message and does not navigate on invalid credentials', async () => {
-    mockFetchSequence([
-      () => jsonResponse({ message: 'Not authenticated' }, 401),
-      () => jsonResponse({ message: 'Invalid email or password' }, 401),
-    ])
+it('shows an error message and does not navigate on invalid credentials', async () => {
+  mockFetchSequence([
+    () => jsonResponse({ message: 'Not authenticated' }, 401),
+    () => jsonResponse({}, 401),
+    () => jsonResponse({ message: 'Invalid email or password' }, 401),
+  ])
 
-    renderLoginPage()
-    const user = userEvent.setup()
+  renderLoginPage()
+  const user = userEvent.setup()
 
-    await user.type(await screen.findByLabelText('Email'), 'user@test.com')
-    await user.type(screen.getByLabelText('Password'), 'wrongpass')
-    await user.click(screen.getByRole('button', { name: /log in/i }))
+  await user.type(await screen.findByLabelText('Email'), 'user@test.com')
+  await user.type(screen.getByLabelText('Password'), 'wrongpass')
+  await user.click(screen.getByRole('button', { name: /log in/i }))
 
-    expect(await screen.findByText('Invalid email or password')).toBeInTheDocument()
-    expect(screen.queryByText('Jobs Page Stub')).not.toBeInTheDocument()
-  })
+  expect(await screen.findByText('Invalid email or password')).toBeInTheDocument()
+  expect(screen.queryByText('Jobs Page Stub')).not.toBeInTheDocument()
+})
 })

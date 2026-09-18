@@ -54,61 +54,64 @@ describe('RegisterPage', () => {
   })
 
   it('sends tenantName when registering as Employer and navigates on success', async () => {
-    const fetchMock = vi.fn()
-      .mockResolvedValueOnce(jsonResponse({ message: 'Not authenticated' }, 401)) // mount getMe
-      .mockResolvedValueOnce(jsonResponse({}, 200)) // POST /register
-      .mockResolvedValueOnce(jsonResponse({ id: '1', email: 'ada@test.com', role: 'Employer', tenantId: 'tenant-1' }, 200)) // getMe
-    vi.stubGlobal('fetch', fetchMock)
+  const fetchMock = vi.fn()
+    .mockResolvedValueOnce(jsonResponse({ message: 'Not authenticated' }, 401)) // mount getMe
+    .mockResolvedValueOnce(jsonResponse({}, 401)) // mount-triggered refresh, fails
+    .mockResolvedValueOnce(jsonResponse({}, 200)) // POST /register
+    .mockResolvedValueOnce(jsonResponse({ id: '1', email: 'ada@test.com', role: 'Employer', tenantId: 'tenant-1' }, 200)) // getMe
+  vi.stubGlobal('fetch', fetchMock)
 
-    renderRegisterPage()
-    const user = userEvent.setup()
+  renderRegisterPage()
+  const user = userEvent.setup()
 
-    await fillCommonFields(user)
-    await user.selectOptions(screen.getByLabelText('I am a'), 'Employer')
-    await user.type(screen.getByLabelText('Company Name'), 'Acme Corp')
-    await user.click(screen.getByRole('button', { name: /register/i }))
+  await fillCommonFields(user)
+  await user.selectOptions(screen.getByLabelText('I am a'), 'Employer')
+  await user.type(screen.getByLabelText('Company Name'), 'Acme Corp')
+  await user.click(screen.getByRole('button', { name: /register/i }))
 
-    expect(await screen.findByText('Jobs Page Stub')).toBeInTheDocument()
+  expect(await screen.findByText('Jobs Page Stub')).toBeInTheDocument()
 
-    const registerCall = fetchMock.mock.calls[1]
-    const sentBody = JSON.parse(registerCall[1].body)
-    expect(sentBody.tenantName).toBe('Acme Corp')
-    expect(sentBody.role).toBe('Employer')
-  })
+  const registerCall = fetchMock.mock.calls[2]
+  const sentBody = JSON.parse(registerCall[1].body)
+  expect(sentBody.tenantName).toBe('Acme Corp')
+  expect(sentBody.role).toBe('Employer')
+})
 
-  it('omits tenantName when registering as Job Seeker', async () => {
-    const fetchMock = vi.fn()
-      .mockResolvedValueOnce(jsonResponse({ message: 'Not authenticated' }, 401))
-      .mockResolvedValueOnce(jsonResponse({}, 200))
-      .mockResolvedValueOnce(jsonResponse({ id: '2', email: 'ada@test.com', role: 'JobSeeker', tenantId: null }, 200))
-    vi.stubGlobal('fetch', fetchMock)
+it('omits tenantName when registering as Job Seeker', async () => {
+  const fetchMock = vi.fn()
+    .mockResolvedValueOnce(jsonResponse({ message: 'Not authenticated' }, 401))
+    .mockResolvedValueOnce(jsonResponse({}, 401))
+    .mockResolvedValueOnce(jsonResponse({}, 200))
+    .mockResolvedValueOnce(jsonResponse({ id: '2', email: 'ada@test.com', role: 'JobSeeker', tenantId: null }, 200))
+  vi.stubGlobal('fetch', fetchMock)
 
-    renderRegisterPage()
-    const user = userEvent.setup()
+  renderRegisterPage()
+  const user = userEvent.setup()
 
-    await fillCommonFields(user)
-    await user.click(screen.getByRole('button', { name: /register/i }))
+  await fillCommonFields(user)
+  await user.click(screen.getByRole('button', { name: /register/i }))
 
-    await screen.findByText('Jobs Page Stub')
+  await screen.findByText('Jobs Page Stub')
 
-    const registerCall = fetchMock.mock.calls[1]
-    const sentBody = JSON.parse(registerCall[1].body)
-    expect(sentBody.tenantName).toBeUndefined()
-  })
+  const registerCall = fetchMock.mock.calls[2]
+  const sentBody = JSON.parse(registerCall[1].body)
+  expect(sentBody.tenantName).toBeUndefined()
+})
 
-  it('shows an error message on registration failure', async () => {
-    const fetchMock = vi.fn()
-      .mockResolvedValueOnce(jsonResponse({ message: 'Not authenticated' }, 401))
-      .mockResolvedValueOnce(jsonResponse({ message: 'Email already registered' }, 400))
-    vi.stubGlobal('fetch', fetchMock)
+it('shows an error message on registration failure', async () => {
+  const fetchMock = vi.fn()
+    .mockResolvedValueOnce(jsonResponse({ message: 'Not authenticated' }, 401))
+    .mockResolvedValueOnce(jsonResponse({}, 401))
+    .mockResolvedValueOnce(jsonResponse({ message: 'Email already registered' }, 400))
+  vi.stubGlobal('fetch', fetchMock)
 
-    renderRegisterPage()
-    const user = userEvent.setup()
+  renderRegisterPage()
+  const user = userEvent.setup()
 
-    await fillCommonFields(user)
-    await user.click(screen.getByRole('button', { name: /register/i }))
+  await fillCommonFields(user)
+  await user.click(screen.getByRole('button', { name: /register/i }))
 
-    expect(await screen.findByText('Email already registered')).toBeInTheDocument()
-    expect(screen.queryByText('Jobs Page Stub')).not.toBeInTheDocument()
-  })
+  expect(await screen.findByText('Email already registered')).toBeInTheDocument()
+  expect(screen.queryByText('Jobs Page Stub')).not.toBeInTheDocument()
+})
 })
