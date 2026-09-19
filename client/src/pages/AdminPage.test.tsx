@@ -93,6 +93,7 @@ describe('AdminPage', () => {
         () => jsonResponse({ items: [makeUser({ isActive: true })], totalCount: 1, page: 1, pageSize: 10 }),
         () => jsonResponse({ items: [makeUser({ isActive: false })], totalCount: 1, page: 1, pageSize: 10 }),
       ],
+      'GET /api/auth/csrf': [() => jsonResponse({ token: 'csrf-test' })],
       'PATCH /api/admin/users': [noContentResponse],
     })
 
@@ -109,6 +110,7 @@ describe('AdminPage', () => {
     mockFetchRoutes({
       'GET /api/admin/stats': [() => jsonResponse(statsBody)],
       'GET /api/admin/users': [() => jsonResponse({ items: [makeUser({ isActive: true })], totalCount: 1, page: 1, pageSize: 10 })],
+      'GET /api/auth/csrf': [() => jsonResponse({ token: 'csrf-test' })],
       'PATCH /api/admin/users': [() => jsonResponse({ message: 'Cannot deactivate yourself' }, 400)],
     })
 

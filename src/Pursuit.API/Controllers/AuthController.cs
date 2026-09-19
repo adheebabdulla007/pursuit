@@ -4,6 +4,7 @@ using Pursuit.Application.Interfaces;
 using Microsoft.AspNetCore.Authorization;
 using System.Security.Claims;
 using Pursuit.Application.Security;
+using Microsoft.AspNetCore.Antiforgery;
 
 namespace Pursuit.API.Controllers;
 
@@ -19,13 +20,23 @@ public sealed class AuthController : ControllerBase
 
     private readonly IAuthService _authService;
     private readonly IConfiguration _configuration;
+    private readonly IAntiforgery _antiforgery;
 
     public AuthController(
         IAuthService authService,
-        IConfiguration configuration)
+        IConfiguration configuration,
+        IAntiforgery antiforgery)
     {
         _authService = authService;
         _configuration = configuration;
+        _antiforgery = antiforgery;
+    }
+
+    [HttpGet("csrf")]
+    public IActionResult Csrf()
+    {
+        var token = _antiforgery.GetAndStoreTokens(HttpContext).RequestToken;
+        return Ok(new { token });
     }
 
     [HttpPost("register")]

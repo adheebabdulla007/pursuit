@@ -2,9 +2,10 @@ import type { LoginRequest, RegisterRequest, CurrentUser } from '../types/auth'
 import { API_BASE_URL } from '../config/env'
 import { extractErrorMessage } from './shared'
 import { apiFetch } from './fetchClient'
+import { csrfFetch } from './csrfFetch'
 
 export async function login(credentials: LoginRequest): Promise<CurrentUser> {
-  const response = await fetch(`${API_BASE_URL}/api/auth/login`, {
+  const response = await csrfFetch(`${API_BASE_URL}/api/auth/login`, {
     method: 'POST',
     credentials: 'include',
     headers: {
@@ -21,7 +22,7 @@ export async function login(credentials: LoginRequest): Promise<CurrentUser> {
 }
 
 export async function register(data: RegisterRequest): Promise<CurrentUser> {
-  const response = await fetch(`${API_BASE_URL}/api/auth/register`, {
+  const response = await csrfFetch(`${API_BASE_URL}/api/auth/register`, {
     method: 'POST',
     credentials: 'include',
     headers: {

@@ -44,8 +44,10 @@ describe('LoginPage', () => {
   mockFetchSequence([
     // mount-time getMe() inside AuthProvider — not authenticated yet
     () => jsonResponse({ message: 'Not authenticated' }, 401),
+    () => jsonResponse({ token: 'csrf-test' }),
     // mount-triggered refresh attempt from apiFetch — no valid session, fails
     () => jsonResponse({}, 401),
+    () => jsonResponse({ token: 'csrf-test' }),
     // POST /api/auth/login — body unused by login(), only .ok is checked
     () => jsonResponse({}, 200),
     // post-login getMe() — returns the real user
@@ -65,7 +67,9 @@ describe('LoginPage', () => {
 it('shows an error message and does not navigate on invalid credentials', async () => {
   mockFetchSequence([
     () => jsonResponse({ message: 'Not authenticated' }, 401),
+    () => jsonResponse({ token: 'csrf-test' }),
     () => jsonResponse({}, 401),
+    () => jsonResponse({ token: 'csrf-test' }),
     () => jsonResponse({ message: 'Invalid email or password' }, 401),
   ])
 

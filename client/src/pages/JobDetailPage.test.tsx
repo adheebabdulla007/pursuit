@@ -118,6 +118,7 @@ describe('JobDetailPage', () => {
     mockUser({ id: 'u2', email: 'js@test.com', role: 'JobSeeker', tenantId: null })
     const fetchMock = vi.fn()
       .mockResolvedValueOnce(jsonResponse(job))
+      .mockResolvedValueOnce(jsonResponse({ token: 'csrf-test' }))
       .mockResolvedValueOnce(jsonResponse({ id: 'app-1', jobId: 'job-1', status: 'Submitted' }))
     vi.stubGlobal('fetch', fetchMock)
 

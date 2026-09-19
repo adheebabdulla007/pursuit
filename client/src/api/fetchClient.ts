@@ -1,9 +1,10 @@
 import { API_BASE_URL } from '../config/env'
+import { csrfFetch } from './csrfFetch'
 
 let refreshPromise: Promise<boolean> | null = null
 
 async function performRefresh(): Promise<boolean> {
-  const response = await fetch(`${API_BASE_URL}/api/auth/refresh`, {
+  const response = await csrfFetch(`${API_BASE_URL}/api/auth/refresh`, {
     method: 'POST',
     credentials: 'include',
   })
@@ -16,7 +17,7 @@ export async function apiFetch(
   options?: { redirectOnFailure?: boolean }
 ): Promise<Response> {
   const redirectOnFailure = options?.redirectOnFailure ?? true
-  const response = await fetch(input, { ...init, credentials: 'include' })
+  const response = await csrfFetch(input, init)
 
   if (response.status !== 401) {
     return response
@@ -35,7 +36,7 @@ export async function apiFetch(
     return response
   }
 
-  const retryResponse = await fetch(input, { ...init, credentials: 'include' })
+  const retryResponse = await csrfFetch(input, init)
 
   if (retryResponse.status === 401 && redirectOnFailure) {
     window.location.href = '/login'

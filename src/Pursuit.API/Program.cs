@@ -12,6 +12,7 @@ using Pursuit.Application.Interfaces;
 using Pursuit.Application.Security;
 using Pursuit.Domain.Enums;
 using System.Security.Claims;
+using Microsoft.AspNetCore.DataProtection;
 
 Log.Logger = new LoggerConfiguration()
     .WriteTo.Console()
@@ -43,6 +44,39 @@ try
     builder.Services.AddInfrastructure(builder.Configuration);
     builder.Services.AddApplication();
     builder.Services.AddHealthChecks();
+    builder.Services.AddAntiforgery(options =>
+    {
+        options.HeaderName = "X-CSRF-TOKEN";
+        options.Cookie.Name = "pursuit_csrf";
+        options.Cookie.HttpOnly = true;
+        options.Cookie.Path = "/";
+        options.Cookie.SameSite = SameSiteMode.Strict;
+        options.Cookie.SecurePolicy = builder.Environment.IsProduction()
+            ? CookieSecurePolicy.Always : CookieSecurePolicy.SameAsRequest;
+    });
+
+    var dataProtection = builder.Services.AddDataProtection().SetApplicationName("Pursuit");
+    if (builder.Environment.IsProduction())
+    {
+        var keyRingPath = builder.Configuration["DataProtection:KeyRingPath"];
+        if (string.IsNullOrWhiteSpace(keyRingPath) || !Path.IsPathFullyQualified(keyRingPath)
+            || !Directory.Exists(keyRingPath))
+            throw new InvalidOperationException("Production requires an existing absolute DataProtection:KeyRingPath.");
+        dataProtection.PersistKeysToFileSystem(new DirectoryInfo(keyRingPath));
+    }
+
+    var allowedOrigins = builder.Configuration.GetSection("Cors:AllowedOrigins").Get<string[]>() ?? [];
+    if (!builder.Environment.IsProduction())
+        allowedOrigins = [.. allowedOrigins, "http://localhost:5173", "http://localhost:5174"];
+    allowedOrigins = allowedOrigins.Select(origin =>
+    {
+        if (!Uri.TryCreate(origin, UriKind.Absolute, out var uri)
+            || (uri.Scheme != Uri.UriSchemeHttps && (builder.Environment.IsProduction() || uri.Scheme != Uri.UriSchemeHttp))
+            || uri.UserInfo.Length != 0 || uri.AbsolutePath != "/" || uri.Query.Length != 0 || uri.Fragment.Length != 0
+            || !string.Equals(uri.GetLeftPart(UriPartial.Authority), origin.TrimEnd('/'), StringComparison.OrdinalIgnoreCase))
+            throw new InvalidOperationException($"Invalid Cors:AllowedOrigins entry: {origin}");
+        return uri.GetLeftPart(UriPartial.Authority);
+    }).Distinct(StringComparer.OrdinalIgnoreCase).ToArray();
 
     builder.Services.AddAuthentication(options =>
     {
@@ -103,7 +137,7 @@ try
     {
         options.AddPolicy("AllowReactDev", policy =>
         {
-            policy.WithOrigins("http://localhost:5173", "http://localhost:5174")
+            policy.WithOrigins(allowedOrigins)
                   .AllowAnyMethod()
                   .AllowAnyHeader()
                   .AllowCredentials();
@@ -130,6 +164,7 @@ try
     app.UseMiddleware<ExceptionMiddleware>();
     app.UseCors("AllowReactDev");
     app.UseAuthentication();
+    app.UseMiddleware<BrowserCsrfMiddleware>((object)allowedOrigins);
     app.UseAuthorization();
     app.MapControllers();
     app.MapHealthChecks("/health");

@@ -56,7 +56,9 @@ describe('RegisterPage', () => {
   it('sends tenantName when registering as Employer and navigates on success', async () => {
   const fetchMock = vi.fn()
     .mockResolvedValueOnce(jsonResponse({ message: 'Not authenticated' }, 401)) // mount getMe
+    .mockResolvedValueOnce(jsonResponse({ token: 'csrf-test' }))
     .mockResolvedValueOnce(jsonResponse({}, 401)) // mount-triggered refresh, fails
+    .mockResolvedValueOnce(jsonResponse({ token: 'csrf-test' }))
     .mockResolvedValueOnce(jsonResponse({}, 200)) // POST /register
     .mockResolvedValueOnce(jsonResponse({ id: '1', email: 'ada@test.com', role: 'Employer', tenantId: 'tenant-1' }, 200)) // getMe
   vi.stubGlobal('fetch', fetchMock)
@@ -71,7 +73,7 @@ describe('RegisterPage', () => {
 
   expect(await screen.findByText('Jobs Page Stub')).toBeInTheDocument()
 
-  const registerCall = fetchMock.mock.calls[2]
+  const registerCall = fetchMock.mock.calls[4]
   const sentBody = JSON.parse(registerCall[1].body)
   expect(sentBody.tenantName).toBe('Acme Corp')
   expect(sentBody.role).toBe('Employer')
@@ -80,7 +82,9 @@ describe('RegisterPage', () => {
 it('omits tenantName when registering as Job Seeker', async () => {
   const fetchMock = vi.fn()
     .mockResolvedValueOnce(jsonResponse({ message: 'Not authenticated' }, 401))
+    .mockResolvedValueOnce(jsonResponse({ token: 'csrf-test' }))
     .mockResolvedValueOnce(jsonResponse({}, 401))
+    .mockResolvedValueOnce(jsonResponse({ token: 'csrf-test' }))
     .mockResolvedValueOnce(jsonResponse({}, 200))
     .mockResolvedValueOnce(jsonResponse({ id: '2', email: 'ada@test.com', role: 'JobSeeker', tenantId: null }, 200))
   vi.stubGlobal('fetch', fetchMock)
@@ -93,7 +97,7 @@ it('omits tenantName when registering as Job Seeker', async () => {
 
   await screen.findByText('Jobs Page Stub')
 
-  const registerCall = fetchMock.mock.calls[2]
+  const registerCall = fetchMock.mock.calls[4]
   const sentBody = JSON.parse(registerCall[1].body)
   expect(sentBody.tenantName).toBeUndefined()
 })
@@ -101,7 +105,9 @@ it('omits tenantName when registering as Job Seeker', async () => {
 it('shows an error message on registration failure', async () => {
   const fetchMock = vi.fn()
     .mockResolvedValueOnce(jsonResponse({ message: 'Not authenticated' }, 401))
+    .mockResolvedValueOnce(jsonResponse({ token: 'csrf-test' }))
     .mockResolvedValueOnce(jsonResponse({}, 401))
+    .mockResolvedValueOnce(jsonResponse({ token: 'csrf-test' }))
     .mockResolvedValueOnce(jsonResponse({ message: 'Email already registered' }, 400))
   vi.stubGlobal('fetch', fetchMock)
 

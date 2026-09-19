@@ -49,9 +49,15 @@ test('employer posts a job and job seeker applies to it', async ({ page }) => {
   expect(cookiesAfterLogout.some((cookie) => cookie.name === 'pursuit_token')).toBe(false);
   expect(cookiesAfterLogout.some((cookie) => cookie.name === 'pursuit_refresh_token')).toBe(false);
 
+  const csrfResponse = await page.request.get('http://localhost:5147/api/auth/csrf');
+  const { token } = await csrfResponse.json();
+  const csrfCookie = (await page.context().cookies())
+    .find((cookie) => cookie.name === 'pursuit_csrf');
+  expect(csrfCookie).toBeDefined();
   const replayResponse = await page.request.post('http://localhost:5147/api/auth/refresh', {
     headers: {
-      Cookie: `pursuit_refresh_token=${refreshCookie!.value}`,
+      Cookie: `pursuit_csrf=${csrfCookie!.value}; pursuit_refresh_token=${refreshCookie!.value}`,
+      'X-CSRF-TOKEN': token,
     },
   });
   expect(replayResponse.status()).toBe(401);

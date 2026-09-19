@@ -33,7 +33,8 @@ beforeEach(() => {
 
 describe('CreateJobPage', () => {
   it('creates a job and navigates to its detail page', async () => {
-    vi.stubGlobal('fetch', vi.fn().mockResolvedValueOnce(jsonResponse({ id: 'job-999' }, 200)))
+    vi.stubGlobal('fetch', vi.fn().mockResolvedValueOnce(jsonResponse({ token: 'csrf-test' }))
+      .mockResolvedValueOnce(jsonResponse({ id: 'job-999' }, 200)))
 
     renderCreateJobPage()
     const user = userEvent.setup()
@@ -45,7 +46,8 @@ describe('CreateJobPage', () => {
   })
 
   it('shows an error message and does not navigate when creation fails', async () => {
-    vi.stubGlobal('fetch', vi.fn().mockResolvedValueOnce(jsonResponse({ message: 'Title is required' }, 400)))
+    vi.stubGlobal('fetch', vi.fn().mockResolvedValueOnce(jsonResponse({ token: 'csrf-test' }))
+      .mockResolvedValueOnce(jsonResponse({ message: 'Title is required' }, 400)))
 
     renderCreateJobPage()
     const user = userEvent.setup()
