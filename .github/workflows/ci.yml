@@ -1,0 +1,138 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ci-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  backend:
+    name: Backend build and integration tests
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v7
+
+      - name: Set up .NET SDK
+        uses: actions/setup-dotnet@v6
+        with:
+          global-json-file: global.json
+
+      - name: Restore dependencies
+        run: dotnet restore Pursuit.slnx
+
+      - name: Build
+        run: dotnet build Pursuit.slnx --configuration Release --no-restore
+
+      - name: Run integration tests
+        run: dotnet test Pursuit.slnx --configuration Release --no-build --logger "console;verbosity=normal"
+
+  frontend:
+    name: Frontend lint, test, and build
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+
+    defaults:
+      run:
+        working-directory: client
+
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v7
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v7
+        with:
+          node-version-file: .nvmrc
+          cache: npm
+          cache-dependency-path: client/package-lock.json
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Lint
+        run: npm run lint
+
+      - name: Run component tests
+        run: npm test
+
+      - name: Build
+        run: npm run build
+
+  end-to-end:
+    name: End-to-end browser journey
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    env:
+      SA_PASSWORD: "PursuitE2E!2026Strong"
+      ConnectionStrings__DefaultConnection: "Server=localhost,1435;Database=PursuitDb;User Id=sa;Password=PursuitE2E!2026Strong;TrustServerCertificate=True;"
+      JwtSettings__Secret: "pursuit-ci-secret-key-must-be-at-least-32-characters"
+      JwtSettings__Issuer: "Pursuit"
+      JwtSettings__Audience: "PursuitUsers"
+      JwtSettings__ExpiryInMinutes: "15"
+      JwtSettings__RefreshTokenExpiryInDays: "7"
+      RedisSettings__ConnectionString: "localhost:6380"
+      RabbitMqSettings__Host: "localhost"
+      RabbitMqSettings__Port: "5673"
+      RabbitMqSettings__Username: "pursuit_e2e"
+      RabbitMqSettings__Password: "pursuit_e2e_pass"
+      AzureBlobSettings__ConnectionString: "DefaultEndpointsProtocol=http;AccountName=devstoreaccount1;AccountKey=Eby8vdM02xNOcqFlqUwJPLlmEtlCDXJ1OUzFT50uSRZ6IFsuFq2UVErCz4I6tq/K1SZFPTOtr/KBHBeksoGMGw==;BlobEndpoint=http://localhost:10001/devstoreaccount1;"
+      AzureBlobSettings__ContainerName: "resumes"
+
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v7
+
+      - name: Set up .NET SDK
+        uses: actions/setup-dotnet@v6
+        with:
+          global-json-file: global.json
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v7
+        with:
+          node-version-file: .nvmrc
+          cache: npm
+          cache-dependency-path: client/package-lock.json
+
+      - name: Restore backend dependencies
+        run: dotnet restore src/Pursuit.API/Pursuit.API.csproj
+
+      - name: Install frontend dependencies
+        run: npm ci
+        working-directory: client
+
+      - name: Install browser runtimes
+        run: npx playwright install --with-deps chromium firefox webkit
+        working-directory: client
+
+      - name: Start E2E dependencies
+        run: docker compose -f docker-compose.e2e.yml up -d --wait
+
+      - name: Run browser journey
+        run: npx playwright test
+        working-directory: client
+
+      - name: Upload Playwright report
+        if: always()
+        uses: actions/upload-artifact@v7
+        with:
+          name: playwright-report
+          path: client/playwright-report/
+          if-no-files-found: ignore
+          retention-days: 7
+
+      - name: Stop E2E dependencies
+        if: always()
+        run: docker compose -f docker-compose.e2e.yml down

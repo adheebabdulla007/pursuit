@@ -3,7 +3,7 @@ import { useParams, Link } from 'react-router-dom'
 import { useQuery } from '@tanstack/react-query'
 import { fetchJobById } from '../api/jobs'
 import { applyToJob } from '../api/applications'
-import { useAuth } from '../context/AuthContext'
+import { useAuth } from '../context/useAuth'
 import { Card } from '../components/ui/Card'
 import { Button } from '../components/ui/Button'
 
