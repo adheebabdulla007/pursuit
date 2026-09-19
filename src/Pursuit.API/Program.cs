@@ -8,6 +8,10 @@ using Serilog;
 using System.Text;
 using Pursuit.Infrastructure.Persistence;
 using Microsoft.EntityFrameworkCore;
+using Pursuit.Application.Interfaces;
+using Pursuit.Application.Security;
+using Pursuit.Domain.Enums;
+using System.Security.Claims;
 
 Log.Logger = new LoggerConfiguration()
     .WriteTo.Console()
@@ -18,6 +22,7 @@ try
     Log.Information("Starting Pursuit API");
 
     var builder = WebApplication.CreateBuilder(args);
+    AccessTokenPolicy.ReadLifetimeMinutes(builder.Configuration);
 
     builder.Host.UseSerilog((context, services, configuration) =>
         configuration.ReadFrom.Configuration(context.Configuration)
@@ -52,6 +57,7 @@ try
             ValidateAudience = true,
             ValidateLifetime = true,
             ValidateIssuerSigningKey = true,
+            ClockSkew = TimeSpan.Zero,
             ValidIssuer = builder.Configuration["JwtSettings:Issuer"],
             ValidAudience = builder.Configuration["JwtSettings:Audience"],
             IssuerSigningKey = new SymmetricSecurityKey(
@@ -67,6 +73,28 @@ try
                     context.Token = token;
                 }
                 return Task.CompletedTask;
+            },
+            OnTokenValidated = async context =>
+            {
+                var principal = context.Principal!;
+                var tenantClaim = principal.FindFirst("tenantId")?.Value;
+                Guid? tenantId = null;
+                if (tenantClaim is not null)
+                {
+                    if (!Guid.TryParse(tenantClaim, out var parsedTenant))
+                    {
+                        context.Fail("Invalid account state.");
+                        return;
+                    }
+                    tenantId = parsedTenant;
+                }
+                if (!Guid.TryParse(principal.FindFirst(ClaimTypes.NameIdentifier)?.Value, out var userId)
+                    || !Guid.TryParse(principal.FindFirst(AccessTokenPolicy.SecurityVersionClaim)?.Value, out var version)
+                    || !Enum.TryParse<UserRole>(principal.FindFirst(ClaimTypes.Role)?.Value, out var role)
+                    || !Enum.IsDefined(role)
+                    || !await context.HttpContext.RequestServices.GetRequiredService<IUserRepository>()
+                        .IsAuthenticationAllowedAsync(userId, version, role, tenantId, context.HttpContext.RequestAborted))
+                    context.Fail("Invalid account state.");
             }
         };
     });
@@ -111,6 +139,7 @@ try
 catch (Exception ex)
 {
     Log.Fatal(ex, "Pursuit API failed to start");
+    throw;
 }
 finally
 {

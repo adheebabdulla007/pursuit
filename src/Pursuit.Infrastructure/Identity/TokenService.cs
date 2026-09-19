@@ -6,6 +6,7 @@ using Microsoft.Extensions.Configuration;
 using Microsoft.IdentityModel.Tokens;
 using Pursuit.Application.Interfaces;
 using Pursuit.Domain.Entities;
+using Pursuit.Application.Security;
 
 namespace Pursuit.Infrastructure.Identity;
 
@@ -27,9 +28,7 @@ public sealed class TokenService : ITokenService
         _audience = configuration["JwtSettings:Audience"]
             ?? throw new InvalidOperationException("JwtSettings:Audience is not configured.");
 
-        _expiryInMinutes = int.Parse(
-            configuration["JwtSettings:ExpiryInMinutes"]
-            ?? throw new InvalidOperationException("JwtSettings:ExpiryInMinutes is not configured."));
+        _expiryInMinutes = AccessTokenPolicy.ReadLifetimeMinutes(configuration);
     }
 
     public string GenerateToken(User user)
@@ -40,6 +39,7 @@ public sealed class TokenService : ITokenService
             new Claim(JwtRegisteredClaimNames.Jti, Guid.NewGuid().ToString()),
             new Claim(ClaimTypes.Role, user.Role.ToString()),
             new Claim(ClaimTypes.Email, user.Email),
+            new Claim(AccessTokenPolicy.SecurityVersionClaim, user.SecurityVersion.ToString()),
         };
 
         if (user.TenantId.HasValue)

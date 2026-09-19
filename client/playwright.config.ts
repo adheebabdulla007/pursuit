@@ -30,6 +30,7 @@ export default defineConfig({
   webServer: [
     {
       command: 'dotnet run --launch-profile e2e --project ../src/Pursuit.API',
+      env: { JwtSettings__ExpiryInMinutes: '15' },
       url: 'http://localhost:5147/health',
       reuseExistingServer: !process.env.CI,
       timeout: 120_000,

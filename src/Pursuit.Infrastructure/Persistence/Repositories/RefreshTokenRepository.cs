@@ -23,13 +23,16 @@ public class RefreshTokenRepository : Repository<RefreshToken>, IRefreshTokenRep
             .Select(token => (Guid?)token.UserId)
             .SingleOrDefaultAsync(cancellationToken);
 
+        return await ExecuteWithUserLockAsync(userId ?? Guid.Empty, operation, cancellationToken);
+    }
+
+    public async Task<T> ExecuteWithUserLockAsync<T>(Guid userId, Func<Task<T>> operation,
+        CancellationToken cancellationToken = default)
+    {
         await using var transaction = await _context.Database.BeginTransactionAsync(cancellationToken);
-        if (userId.HasValue)
-        {
-            await _context.Database.ExecuteSqlInterpolatedAsync(
-                $"SELECT [Id] FROM [Users] WITH (UPDLOCK, HOLDLOCK) WHERE [Id] = {userId.Value}",
-                cancellationToken);
-        }
+        await _context.Database.ExecuteSqlInterpolatedAsync(
+            $"SELECT [Id] FROM [Users] WITH (UPDLOCK, HOLDLOCK) WHERE [Id] = {userId}",
+            cancellationToken);
 
         var result = await operation();
         await transaction.CommitAsync(cancellationToken);
@@ -67,5 +70,27 @@ public class RefreshTokenRepository : Repository<RefreshToken>, IRefreshTokenRep
         }
 
         await _context.SaveChangesAsync(cancellationToken);
+    }
+
+    public async Task RevokeTokenChainAsync(Guid userId, Guid tokenId,
+        CancellationToken cancellationToken = default)
+    {
+        // Traverse only indexed replacement links. This keeps work proportional
+        // to one device's rotation chain, regardless of other sessions or age.
+        await _context.Database.ExecuteSqlInterpolatedAsync($"""
+            ;WITH TokenChain AS (
+                SELECT [Id], [ReplacedByTokenId] FROM [RefreshTokens]
+                WHERE [Id] = {tokenId} AND [UserId] = {userId}
+                UNION ALL
+                SELECT child.[Id], child.[ReplacedByTokenId]
+                FROM [RefreshTokens] AS child
+                INNER JOIN TokenChain AS parent ON child.[Id] = parent.[ReplacedByTokenId]
+                WHERE child.[UserId] = {userId}
+            )
+            UPDATE token SET [IsRevoked] = 1, [UpdatedAt] = SYSUTCDATETIME()
+            FROM [RefreshTokens] AS token
+            INNER JOIN TokenChain AS chain ON chain.[Id] = token.[Id]
+            OPTION (MAXRECURSION 32767)
+            """, cancellationToken);
     }
 }

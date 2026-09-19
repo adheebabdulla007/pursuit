@@ -53,7 +53,7 @@ services:
       JwtSettings__Secret: "${JWT_SECRET}"
       JwtSettings__Issuer: "Pursuit"
       JwtSettings__Audience: "PursuitUsers"
-      JwtSettings__ExpiryInMinutes: "60"
+      JwtSettings__ExpiryInMinutes: "15"
       RedisSettings__ConnectionString: "redis:6379"
       RabbitMqSettings__Host: "rabbitmq"
       RabbitMqSettings__Port: "5672"

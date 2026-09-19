@@ -3,6 +3,7 @@ using Pursuit.Application.DTOs;
 using Pursuit.Application.Interfaces;
 using Microsoft.AspNetCore.Authorization;
 using System.Security.Claims;
+using Pursuit.Application.Security;
 
 namespace Pursuit.API.Controllers;
 
@@ -98,7 +99,7 @@ public sealed class AuthController : ControllerBase
 
     private void SetTokenCookie(string token)
     {
-        var expiryMinutes = int.Parse(_configuration["JwtSettings:ExpiryInMinutes"]!);
+        var expiryMinutes = AccessTokenPolicy.ReadLifetimeMinutes(_configuration);
 
         Response.Cookies.Append(
             AccessTokenCookieName,

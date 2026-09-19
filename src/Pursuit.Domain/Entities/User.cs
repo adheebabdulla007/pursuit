@@ -11,6 +11,7 @@ public class User : BaseEntity
     public string LastName { get; set; } = string.Empty;
     public UserRole Role { get; set; }
     public bool IsActive { get; set; } = true;
+    public Guid SecurityVersion { get; set; } = Guid.NewGuid();
 
     // Navigation properties
     public Tenant? Tenant { get; set; }

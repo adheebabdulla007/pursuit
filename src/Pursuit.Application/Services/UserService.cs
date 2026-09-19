@@ -39,14 +39,18 @@ public class UserService : IUserService
         if (userId == _currentUserService.UserId)
             throw new InvalidOperationException("You cannot change your own account status.");
 
-        var user = await _userRepository.GetByIdIgnoringFiltersAsync(userId, cancellationToken) ?? throw new KeyNotFoundException($"User with ID {userId} not found.");
-
-        user.IsActive = isActive;
-
-        await _userRepository.UpdateAsync(user, cancellationToken);
-
-        if (!isActive)
-            await _refreshTokenRepository.RevokeAllForUserAsync(userId, cancellationToken);
+        await _refreshTokenRepository.ExecuteWithUserLockAsync(userId, async () =>
+        {
+            var user = await _userRepository.GetByIdIgnoringFiltersAsync(userId, cancellationToken)
+                ?? throw new KeyNotFoundException($"User with ID {userId} not found.");
+            user.IsActive = isActive;
+            if (!isActive)
+                user.SecurityVersion = Guid.NewGuid();
+            await _userRepository.UpdateAsync(user, cancellationToken);
+            if (!isActive)
+                await _refreshTokenRepository.RevokeAllForUserAsync(userId, cancellationToken);
+            return true;
+        }, cancellationToken);
     }
 
     private static UserDto MapToDto(User user) => new()

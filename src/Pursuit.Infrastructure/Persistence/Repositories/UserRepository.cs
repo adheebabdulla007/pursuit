@@ -12,6 +12,17 @@ public sealed class UserRepository : Repository<User>, IUserRepository
     {
     }
 
+    public Task<bool> IsAuthenticationAllowedAsync(Guid userId, Guid securityVersion, UserRole role,
+        Guid? tenantId, CancellationToken cancellationToken = default)
+    {
+        // Authentication precedes tenant context: this is a narrowly scoped identity
+        // lookup, projecting only a boolean and bypassing ordinary tenant filters.
+        return _dbSet.IgnoreQueryFilters().AsNoTracking().AnyAsync(user =>
+            user.Id == userId && user.IsActive && user.SecurityVersion == securityVersion
+            && user.Role == role && user.TenantId == tenantId
+            && (user.TenantId == null || user.Tenant!.IsActive), cancellationToken);
+    }
+
     public async Task<User?> GetByEmailAsync(string email, CancellationToken cancellationToken = default)
     {
         return await _dbSet
@@ -67,8 +78,11 @@ public sealed class UserRepository : Repository<User>, IUserRepository
 
     public async Task<User?> GetByIdIgnoringFiltersAsync(Guid id, CancellationToken cancellationToken = default)
     {
-        return await _dbSet
+        var user = await _dbSet
             .IgnoreQueryFilters()
             .FirstOrDefaultAsync(u => u.Id == id, cancellationToken);
+        if (user is not null)
+            await _context.Entry(user).ReloadAsync(cancellationToken);
+        return user;
     }
 }

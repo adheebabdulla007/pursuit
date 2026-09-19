@@ -81,16 +81,7 @@ public sealed class AuthService : IAuthService
 
         await _userRepository.AddAsync(user, cancellationToken);
 
-        var token = _tokenService.GenerateToken(user);
-        var refreshToken = await GenerateAndStoreRefreshTokenAsync(user.Id, cancellationToken);
-
-        return new AuthResponseDto
-        {
-            Token = token,
-            RefreshToken = refreshToken,
-            Email = user.Email,
-            Role = user.Role.ToString()
-        };
+        return await IssueSessionAsync(user.Id, user.PasswordHash, cancellationToken);
     }
 
     public async Task<AuthResponseDto> LoginAsync(LoginDto dto, CancellationToken cancellationToken = default)
@@ -101,19 +92,36 @@ public sealed class AuthService : IAuthService
         if (!_passwordHasher.Verify(dto.Password, user.PasswordHash))
             throw new UnauthorizedAccessException("Invalid email or password.");
 
+        return await IssueSessionAsync(user.Id, user.PasswordHash, cancellationToken);
+    }
+
+    private Task<AuthResponseDto> IssueSessionAsync(Guid userId, string verifiedPasswordHash,
+        CancellationToken cancellationToken)
+    {
+        return _refreshTokenRepository.ExecuteWithUserLockAsync(userId, async () =>
+        {
+            var user = await _userRepository.GetByIdIgnoringFiltersAsync(userId, cancellationToken)
+                ?? throw new UnauthorizedAccessException("Invalid email or password.");
+            if (user.PasswordHash != verifiedPasswordHash)
+                throw new UnauthorizedAccessException("Invalid email or password.");
+            await EnsureAccountAllowedAsync(user, cancellationToken);
+            return new AuthResponseDto
+            {
+                Token = _tokenService.GenerateToken(user),
+                RefreshToken = await GenerateAndStoreRefreshTokenAsync(user.Id, cancellationToken),
+                Email = user.Email,
+                Role = user.Role.ToString()
+            };
+        }, cancellationToken);
+    }
+
+    private async Task EnsureAccountAllowedAsync(User user, CancellationToken cancellationToken)
+    {
         if (!user.IsActive)
             throw new UnauthorizedAccessException("This account has been deactivated.");
-
-        var token = _tokenService.GenerateToken(user);
-        var refreshToken = await GenerateAndStoreRefreshTokenAsync(user.Id, cancellationToken);
-
-        return new AuthResponseDto
-        {
-            Token = token,
-            RefreshToken = refreshToken,
-            Email = user.Email,
-            Role = user.Role.ToString()
-        };
+        if (!await _userRepository.IsAuthenticationAllowedAsync(user.Id, user.SecurityVersion,
+            user.Role, user.TenantId, cancellationToken))
+            throw new UnauthorizedAccessException("This account is unavailable.");
     }
 
     public async Task<AuthResponseDto> RefreshTokenAsync(string refreshToken, CancellationToken cancellationToken = default)
@@ -142,8 +150,7 @@ public sealed class AuthService : IAuthService
         if (existingToken.ExpiresAt <= DateTime.UtcNow)
             throw new UnauthorizedAccessException("Invalid refresh token.");
 
-        if (!existingToken.User.IsActive)
-            throw new UnauthorizedAccessException("This account has been deactivated.");
+        await EnsureAccountAllowedAsync(existingToken.User, cancellationToken);
 
         var newRawRefreshToken = _tokenService.GenerateRefreshToken();
         var newRefreshTokenEntity = new RefreshToken
@@ -182,8 +189,8 @@ public sealed class AuthService : IAuthService
             if (existingToken is null)
                 return false;
 
-            existingToken.IsRevoked = true;
-            await _refreshTokenRepository.UpdateAsync(existingToken, cancellationToken);
+            await _refreshTokenRepository.RevokeTokenChainAsync(
+                existingToken.UserId, existingToken.Id, cancellationToken);
             return true;
         }, cancellationToken);
     }
