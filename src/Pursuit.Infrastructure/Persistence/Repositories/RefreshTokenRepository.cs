@@ -11,14 +11,46 @@ public class RefreshTokenRepository : Repository<RefreshToken>, IRefreshTokenRep
     {
     }
 
-    public async Task<RefreshToken?> GetByTokenHashAsync(
-    string tokenHash,
-    CancellationToken cancellationToken = default)
+    public async Task<T> ExecuteWithTokenLockAsync<T>(
+        string tokenHash,
+        Func<Task<T>> operation,
+        CancellationToken cancellationToken = default)
     {
-        return await _dbSet
+        // Resolve the immutable owner before locking. All tokens belonging to that
+        // user share one lock, including an ancestor being replayed during rotation.
+        var userId = await _dbSet.AsNoTracking()
+            .Where(token => token.TokenHash == tokenHash)
+            .Select(token => (Guid?)token.UserId)
+            .SingleOrDefaultAsync(cancellationToken);
+
+        await using var transaction = await _context.Database.BeginTransactionAsync(cancellationToken);
+        if (userId.HasValue)
+        {
+            await _context.Database.ExecuteSqlInterpolatedAsync(
+                $"SELECT [Id] FROM [Users] WITH (UPDLOCK, HOLDLOCK) WHERE [Id] = {userId.Value}",
+                cancellationToken);
+        }
+
+        var result = await operation();
+        await transaction.CommitAsync(cancellationToken);
+        return result;
+    }
+
+    public async Task<RefreshToken?> GetByTokenHashAsync(
+        string tokenHash,
+        CancellationToken cancellationToken = default)
+    {
+        var token = await _dbSet
             .IgnoreQueryFilters()
             .Include(rt => rt.User)
             .FirstOrDefaultAsync(rt => rt.TokenHash == tokenHash, cancellationToken);
+        if (token is not null)
+        {
+            // A reused scope may already track snapshots from before the lock.
+            await _context.Entry(token).ReloadAsync(cancellationToken);
+            await _context.Entry(token.User).ReloadAsync(cancellationToken);
+        }
+        return token;
     }
 
     public async Task RevokeAllForUserAsync(

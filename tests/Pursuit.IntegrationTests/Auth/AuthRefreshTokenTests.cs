@@ -21,6 +21,91 @@ public class AuthRefreshTokenTests
     }
 
     [Fact]
+    public async Task RefreshTokenAsync_ConcurrentRequests_OnlyOneRotatesAndReplayRevokesReplacement()
+    {
+        using var setup = _factory.Services.CreateScope();
+        var initial = await setup.ServiceProvider.GetRequiredService<IAuthService>().RegisterAsync(new RegisterDto
+        {
+            FirstName = "Concurrent", LastName = "Refresh",
+            Email = $"concurrent-{Guid.NewGuid()}@test.com",
+            Password = "TestPassword123!", Role = "JobSeeker"
+        });
+        var start = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
+        var ready = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
+        var readyCount = 0;
+        var requests = Enumerable.Range(0, 8).Select(async _ =>
+        {
+            using var scope = _factory.Services.CreateScope();
+            var auth = scope.ServiceProvider.GetRequiredService<IAuthService>();
+            var hash = scope.ServiceProvider.GetRequiredService<ITokenService>().HashToken(initial.RefreshToken);
+            // Deliberately preload the same valid snapshot in every context. The
+            // transaction must re-read it after acquiring the database lock.
+            await scope.ServiceProvider.GetRequiredService<IRefreshTokenRepository>().GetByTokenHashAsync(hash);
+            if (Interlocked.Increment(ref readyCount) == 8)
+                ready.SetResult();
+            await start.Task;
+            try { return await auth.RefreshTokenAsync(initial.RefreshToken); }
+            catch (UnauthorizedAccessException) { return null; }
+        }).ToArray();
+        await ready.Task.WaitAsync(TimeSpan.FromSeconds(30));
+        start.SetResult();
+        var results = await Task.WhenAll(requests).WaitAsync(TimeSpan.FromSeconds(30));
+        results.Should().ContainSingle(result => result != null);
+
+        using var verification = _factory.Services.CreateScope();
+        var db = verification.ServiceProvider.GetRequiredService<AppDbContext>();
+        var user = await db.Users.IgnoreQueryFilters().SingleAsync(user => user.Email == initial.Email);
+        var tokens = await db.RefreshTokens.Where(token => token.UserId == user.Id).ToListAsync();
+        tokens.Should().HaveCount(2, "a refresh token must have only one successor");
+        tokens.Should().OnlyContain(token => token.IsRevoked);
+        var winner = results.Single(result => result != null)!;
+        var replay = () => verification.ServiceProvider.GetRequiredService<IAuthService>()
+            .RefreshTokenAsync(winner.RefreshToken);
+        await replay.Should().ThrowAsync<UnauthorizedAccessException>();
+    }
+
+    [Fact]
+    public async Task TokenTransaction_FailureAfterInsert_RollsBackReplacementAndOldTokenUpdate()
+    {
+        using var scope = _factory.Services.CreateScope();
+        var services = scope.ServiceProvider;
+        var initial = await services.GetRequiredService<IAuthService>().RegisterAsync(new RegisterDto
+        {
+            FirstName = "Rollback", LastName = "Refresh",
+            Email = $"rollback-{Guid.NewGuid()}@test.com",
+            Password = "TestPassword123!", Role = "JobSeeker"
+        });
+        var repository = services.GetRequiredService<IRefreshTokenRepository>();
+        var hash = services.GetRequiredService<ITokenService>().HashToken(initial.RefreshToken);
+        var replacementId = Guid.NewGuid();
+        var fail = () => repository.ExecuteWithTokenLockAsync<bool>(hash, async () =>
+        {
+            var original = (await repository.GetByTokenHashAsync(hash))!;
+            await repository.AddAsync(new RefreshToken
+            {
+                Id = replacementId, UserId = original.UserId,
+                TokenHash = new string('a', 32) + Guid.NewGuid().ToString("N"),
+                ExpiresAt = DateTime.UtcNow.AddDays(1)
+            });
+            original.IsRevoked = true;
+            original.ReplacedByTokenId = replacementId;
+            await repository.UpdateAsync(original);
+            throw new InvalidOperationException("Injected transaction failure");
+        });
+        await fail.Should().ThrowAsync<InvalidOperationException>();
+
+        using var verification = _factory.Services.CreateScope();
+        var db = verification.ServiceProvider.GetRequiredService<AppDbContext>();
+        (await db.RefreshTokens.AnyAsync(token => token.Id == replacementId)).Should().BeFalse();
+        var original = await db.RefreshTokens.SingleAsync(token => token.TokenHash == hash);
+        original.IsRevoked.Should().BeFalse();
+        original.ReplacedByTokenId.Should().BeNull();
+        var retry = await verification.ServiceProvider.GetRequiredService<IAuthService>()
+            .RefreshTokenAsync(initial.RefreshToken);
+        retry.RefreshToken.Should().NotBeNullOrEmpty();
+    }
+
+    [Fact]
     public async Task RefreshTokenAsync_ValidToken_ReturnsNewTokensAndMarksOldTokenAsRevokedAndReplaced()
     {
         // Arrange

@@ -120,6 +120,14 @@ public sealed class AuthService : IAuthService
     {
         var tokenHash = _tokenService.HashToken(refreshToken);
 
+        var response = await _refreshTokenRepository.ExecuteWithTokenLockAsync(
+            tokenHash, () => RotateRefreshTokenAsync(tokenHash, cancellationToken), cancellationToken);
+        // Replay revocation must commit before returning an authentication failure.
+        return response ?? throw new UnauthorizedAccessException("Invalid refresh token.");
+    }
+
+    private async Task<AuthResponseDto?> RotateRefreshTokenAsync(string tokenHash, CancellationToken cancellationToken)
+    {
         var existingToken = await _refreshTokenRepository.GetByTokenHashAsync(tokenHash, cancellationToken)
             ?? throw new UnauthorizedAccessException("Invalid refresh token.");
 
@@ -128,10 +136,10 @@ public sealed class AuthService : IAuthService
             // Reuse of an already-rotated-away token — treat as a theft signal,
             // revoke every refresh token for this user, not just this one.
             await _refreshTokenRepository.RevokeAllForUserAsync(existingToken.UserId, cancellationToken);
-            throw new UnauthorizedAccessException("Invalid refresh token.");
+            return null;
         }
 
-        if (existingToken.ExpiresAt < DateTime.UtcNow)
+        if (existingToken.ExpiresAt <= DateTime.UtcNow)
             throw new UnauthorizedAccessException("Invalid refresh token.");
 
         if (!existingToken.User.IsActive)
@@ -167,13 +175,17 @@ public sealed class AuthService : IAuthService
     public async Task LogoutAsync(string refreshToken, CancellationToken cancellationToken = default)
     {
         var tokenHash = _tokenService.HashToken(refreshToken);
-        var existingToken = await _refreshTokenRepository.GetByTokenHashAsync(tokenHash, cancellationToken);
+        await _refreshTokenRepository.ExecuteWithTokenLockAsync(tokenHash, async () =>
+        {
+            var existingToken = await _refreshTokenRepository.GetByTokenHashAsync(tokenHash, cancellationToken);
 
-        if (existingToken is null)
-            return;
+            if (existingToken is null)
+                return false;
 
-        existingToken.IsRevoked = true;
-        await _refreshTokenRepository.UpdateAsync(existingToken, cancellationToken);
+            existingToken.IsRevoked = true;
+            await _refreshTokenRepository.UpdateAsync(existingToken, cancellationToken);
+            return true;
+        }, cancellationToken);
     }
 
     private async Task<string> GenerateAndStoreRefreshTokenAsync(Guid userId, CancellationToken cancellationToken)
