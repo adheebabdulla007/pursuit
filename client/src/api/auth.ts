@@ -38,9 +38,13 @@ export async function register(data: RegisterRequest): Promise<CurrentUser> {
 }
 
 export async function logout(): Promise<void> {
-  await apiFetch(`${API_BASE_URL}/api/auth/logout`, {
+  const response = await apiFetch(`${API_BASE_URL}/api/auth/refresh/logout`, {
     method: 'POST',
   })
+
+  if (!response.ok) {
+    throw new Error(await extractErrorMessage(response))
+  }
 }
 
 export async function getMe(): Promise<CurrentUser> {

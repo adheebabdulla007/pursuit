@@ -38,8 +38,23 @@ test('employer posts a job and job seeker applies to it', async ({ page }) => {
   await expect(page.getByRole('heading', { level: 1, name: jobTitle })).toBeVisible();
 
   // Employer logs out
+  const refreshCookie = (await page.context().cookies())
+    .find((cookie) => cookie.name === 'pursuit_refresh_token');
+  expect(refreshCookie).toBeDefined();
+
   await page.getByRole('button', { name: 'Logout' }).click();
   await expect(page).toHaveURL(/\/login$/);
+
+  const cookiesAfterLogout = await page.context().cookies();
+  expect(cookiesAfterLogout.some((cookie) => cookie.name === 'pursuit_token')).toBe(false);
+  expect(cookiesAfterLogout.some((cookie) => cookie.name === 'pursuit_refresh_token')).toBe(false);
+
+  const replayResponse = await page.request.post('http://localhost:5147/api/auth/refresh', {
+    headers: {
+      Cookie: `pursuit_refresh_token=${refreshCookie!.value}`,
+    },
+  });
+  expect(replayResponse.status()).toBe(401);
 
   // Job seeker registers
   await page.goto('/register');

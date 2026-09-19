@@ -1,4 +1,5 @@
 ﻿using FluentAssertions;
+using Microsoft.AspNetCore.Mvc.Testing;
 using Pursuit.Application.DTOs;
 using System.Net;
 using System.Net.Http.Json;
@@ -112,5 +113,47 @@ public class AuthFlowTests
         });
 
         loginResponse.StatusCode.Should().Be(HttpStatusCode.Unauthorized);
+    }
+
+    [Fact]
+    public async Task Logout_LegacyRoute_RedirectsAndRevokesRefreshToken()
+    {
+        var email = $"logout-{Guid.NewGuid()}@test.com";
+
+        using var browserClient = _factory.CreateClient(new WebApplicationFactoryClientOptions
+        {
+            AllowAutoRedirect = true,
+            HandleCookies = true
+        });
+
+        var registerResponse = await browserClient.PostAsJsonAsync("/api/auth/register", new RegisterDto
+        {
+            FirstName = "Logout",
+            LastName = "Test",
+            Email = email,
+            Password = "TestPassword123!",
+            Role = "JobSeeker"
+        });
+        registerResponse.StatusCode.Should().Be(HttpStatusCode.OK);
+
+        var refreshCookieHeader = registerResponse.Headers.GetValues("Set-Cookie")
+            .Single(header => header.StartsWith("pursuit_refresh_token=", StringComparison.Ordinal));
+        var refreshCookie = refreshCookieHeader.Split(';', 2)[0];
+
+        var logoutResponse = await browserClient.PostAsync("/api/auth/logout", content: null);
+
+        logoutResponse.StatusCode.Should().Be(HttpStatusCode.OK);
+        logoutResponse.RequestMessage!.RequestUri!.AbsolutePath.Should().Be("/api/auth/refresh/logout");
+
+        using var replayClient = _factory.CreateClient(new WebApplicationFactoryClientOptions
+        {
+            HandleCookies = false
+        });
+        using var replayRequest = new HttpRequestMessage(HttpMethod.Post, "/api/auth/refresh");
+        replayRequest.Headers.Add("Cookie", refreshCookie);
+
+        var replayResponse = await replayClient.SendAsync(replayRequest);
+
+        replayResponse.StatusCode.Should().Be(HttpStatusCode.Unauthorized);
     }
 }

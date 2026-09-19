@@ -10,6 +10,12 @@ namespace Pursuit.API.Controllers;
 [Route("api/[controller]")]
 public sealed class AuthController : ControllerBase
 {
+    private const string AccessTokenCookieName = "pursuit_token";
+    private const string RefreshTokenCookieName = "pursuit_refresh_token";
+    private const string AccessTokenCookiePath = "/";
+    private const string RefreshTokenCookiePath = "/api/auth/refresh";
+    private const string RefreshLogoutPath = "/api/auth/refresh/logout";
+
     private readonly IAuthService _authService;
     private readonly IConfiguration _configuration;
 
@@ -46,7 +52,7 @@ public sealed class AuthController : ControllerBase
     [HttpPost("refresh")]
     public async Task<IActionResult> Refresh(CancellationToken cancellationToken)
     {
-        if (!Request.Cookies.TryGetValue("pursuit_refresh_token", out var refreshToken)
+        if (!Request.Cookies.TryGetValue(RefreshTokenCookieName, out var refreshToken)
             || string.IsNullOrEmpty(refreshToken))
         {
             throw new UnauthorizedAccessException("Invalid refresh token.");
@@ -70,29 +76,22 @@ public sealed class AuthController : ControllerBase
     }
 
     [HttpPost("logout")]
+    public IActionResult LegacyLogout()
+    {
+        return RedirectPreserveMethod(RefreshLogoutPath);
+    }
+
+    [HttpPost("refresh/logout")]
     public async Task<IActionResult> Logout(CancellationToken cancellationToken)
     {
-        if (Request.Cookies.TryGetValue("pursuit_refresh_token", out var refreshToken)
+        if (Request.Cookies.TryGetValue(RefreshTokenCookieName, out var refreshToken)
             && !string.IsNullOrEmpty(refreshToken))
         {
             await _authService.LogoutAsync(refreshToken, cancellationToken);
         }
 
-        Response.Cookies.Delete("pursuit_token", new CookieOptions
-        {
-            HttpOnly = true,
-            Secure = Request.IsHttps,
-            SameSite = SameSiteMode.Strict,
-            Path = "/"
-        });
-
-        Response.Cookies.Delete("pursuit_refresh_token", new CookieOptions
-        {
-            HttpOnly = true,
-            Secure = Request.IsHttps,
-            SameSite = SameSiteMode.Strict,
-            Path = "/api/auth/refresh"
-        });
+        Response.Cookies.Delete(AccessTokenCookieName, CreateCookieOptions(AccessTokenCookiePath));
+        Response.Cookies.Delete(RefreshTokenCookieName, CreateCookieOptions(RefreshTokenCookiePath));
 
         return Ok();
     }
@@ -101,26 +100,31 @@ public sealed class AuthController : ControllerBase
     {
         var expiryMinutes = int.Parse(_configuration["JwtSettings:ExpiryInMinutes"]!);
 
-        Response.Cookies.Append("pursuit_token", token, new CookieOptions
-        {
-            HttpOnly = true,
-            Secure = Request.IsHttps,
-            SameSite = SameSiteMode.Strict,
-            Expires = DateTimeOffset.UtcNow.AddMinutes(expiryMinutes)
-        });
+        Response.Cookies.Append(
+            AccessTokenCookieName,
+            token,
+            CreateCookieOptions(AccessTokenCookiePath, DateTimeOffset.UtcNow.AddMinutes(expiryMinutes)));
     }
 
     private void SetRefreshTokenCookie(string refreshToken)
     {
         var expiryDays = int.Parse(_configuration["JwtSettings:RefreshTokenExpiryInDays"]!);
 
-        Response.Cookies.Append("pursuit_refresh_token", refreshToken, new CookieOptions
+        Response.Cookies.Append(
+            RefreshTokenCookieName,
+            refreshToken,
+            CreateCookieOptions(RefreshTokenCookiePath, DateTimeOffset.UtcNow.AddDays(expiryDays)));
+    }
+
+    private CookieOptions CreateCookieOptions(string path, DateTimeOffset? expires = null)
+    {
+        return new CookieOptions
         {
             HttpOnly = true,
             Secure = Request.IsHttps,
             SameSite = SameSiteMode.Strict,
-            Path = "/api/auth/refresh",
-            Expires = DateTimeOffset.UtcNow.AddDays(expiryDays)
-        });
+            Path = path,
+            Expires = expires
+        };
     }
 }
