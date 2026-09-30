@@ -1,6 +1,7 @@
 ﻿using Microsoft.Extensions.Configuration;
 using Pursuit.Application.DTOs;
 using Pursuit.Application.Interfaces;
+using Pursuit.Application.Security;
 using Pursuit.Domain.Entities;
 using Pursuit.Domain.Enums;
 
@@ -35,11 +36,8 @@ public sealed class AuthService : IAuthService
 
     public async Task<AuthResponseDto> RegisterAsync(RegisterDto dto, CancellationToken cancellationToken = default)
     {
-        if (!Enum.TryParse<UserRole>(dto.Role, ignoreCase: true, out var role))
-            throw new ArgumentException($"Invalid role: {dto.Role}. Valid values are Employer, JobSeeker.");
-
-        if (role == UserRole.Admin)
-            throw new UnauthorizedAccessException("Admin accounts cannot be created through registration.");
+        if (!RegistrationRolePolicy.TryParse(dto.Role, out var role))
+            throw new ArgumentException("Invalid role. Valid values are Employer, JobSeeker.");
 
         if (await _userRepository.ExistsByEmailAsync(dto.Email, cancellationToken))
             throw new InvalidOperationException($"An account with email {dto.Email} already exists.");

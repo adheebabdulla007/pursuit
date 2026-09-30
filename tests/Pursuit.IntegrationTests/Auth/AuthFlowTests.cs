@@ -1,6 +1,8 @@
 ﻿using FluentAssertions;
 using Microsoft.AspNetCore.Mvc.Testing;
+using Microsoft.Extensions.DependencyInjection;
 using Pursuit.Application.DTOs;
+using Pursuit.Application.Interfaces;
 using Pursuit.Domain.Enums;
 using System.Net;
 using System.Net.Http.Json;
@@ -88,6 +90,108 @@ public class AuthFlowTests
         me.GetProperty("email").GetString().Should().Be(email);
         me.GetProperty("role").GetString().Should().Be("Employer");
         me.GetProperty("tenantId").GetString().Should().NotBeNullOrEmpty();
+    }
+
+    [Theory]
+    [InlineData("0")]
+    [InlineData("2")]
+    [InlineData("3")]
+    [InlineData("+2")]
+    [InlineData("02")]
+    [InlineData("999")]
+    [InlineData("Admin")]
+    [InlineData("Admin, Employer")]
+    [InlineData("Admin, JobSeeker")]
+    [InlineData("Employer,Employer")]
+    [InlineData(" Employer ")]
+    public async Task Register_WithNonCanonicalRole_IsRejectedBeforeAccountCreation(string role)
+    {
+        var email = $"invalid-role-{Guid.NewGuid()}@test.com";
+        using var client = _factory.CreateClient();
+
+        var denied = await PostAsJsonWithCsrfAsync(client, "/api/auth/register", new RegisterDto
+        {
+            FirstName = "Invalid",
+            LastName = "Role",
+            Email = email,
+            Password = "TestPassword123!",
+            Role = role,
+            TenantName = $"Invalid Role Co {Guid.NewGuid()}"
+        });
+
+        denied.StatusCode.Should().Be(HttpStatusCode.BadRequest);
+        var error = await denied.Content.ReadFromJsonAsync<JsonElement>();
+        error.GetProperty("message").GetString().Should().Be("Validation failed.");
+        error.GetProperty("errors").GetProperty("Role")[0].GetString()
+            .Should().Be("Role must be either 'Employer' or 'JobSeeker'.");
+
+        var accepted = await PostAsJsonWithCsrfAsync(client, "/api/auth/register", new RegisterDto
+        {
+            FirstName = "Valid",
+            LastName = "Role",
+            Email = email,
+            Password = "TestPassword123!",
+            Role = "JobSeeker"
+        });
+        accepted.StatusCode.Should().Be(HttpStatusCode.OK);
+    }
+
+    [Theory]
+    [InlineData("2")]
+    [InlineData("999")]
+    [InlineData("Admin")]
+    [InlineData("Admin, Employer")]
+    [InlineData(" Employer ")]
+    public async Task RegisterService_WithNonCanonicalRole_IsRejectedBeforeAccountCreation(string role)
+    {
+        var email = $"invalid-service-role-{Guid.NewGuid()}@test.com";
+        using var scope = _factory.Services.CreateScope();
+        var auth = scope.ServiceProvider.GetRequiredService<IAuthService>();
+
+        var action = () => auth.RegisterAsync(new RegisterDto
+        {
+            FirstName = "Invalid",
+            LastName = "Role",
+            Email = email,
+            Password = "TestPassword123!",
+            Role = role,
+            TenantName = $"Invalid Service Role Co {Guid.NewGuid()}"
+        });
+
+        await action.Should().ThrowAsync<ArgumentException>()
+            .WithMessage("Invalid role. Valid values are Employer, JobSeeker.");
+
+        var accepted = await auth.RegisterAsync(new RegisterDto
+        {
+            FirstName = "Valid",
+            LastName = "Role",
+            Email = email,
+            Password = "TestPassword123!",
+            Role = "JobSeeker"
+        });
+        accepted.Role.Should().Be("JobSeeker");
+    }
+
+    [Theory]
+    [InlineData("jobseeker", "JobSeeker")]
+    [InlineData("employer", "Employer")]
+    public async Task Register_WithLowercaseAllowedRole_Succeeds(string role, string expectedRole)
+    {
+        using var client = _factory.CreateClient();
+
+        var response = await PostAsJsonWithCsrfAsync(client, "/api/auth/register", new RegisterDto
+        {
+            FirstName = "Lowercase",
+            LastName = "Role",
+            Email = $"lowercase-role-{Guid.NewGuid()}@test.com",
+            Password = "TestPassword123!",
+            Role = role,
+            TenantName = expectedRole == "Employer" ? $"Lowercase Co {Guid.NewGuid()}" : null
+        });
+
+        response.StatusCode.Should().Be(HttpStatusCode.OK);
+        var body = await response.Content.ReadFromJsonAsync<JsonElement>();
+        body.GetProperty("role").GetString().Should().Be(expectedRole);
     }
 
     [Fact]

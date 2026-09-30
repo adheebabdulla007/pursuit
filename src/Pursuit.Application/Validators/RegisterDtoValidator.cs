@@ -1,5 +1,6 @@
 ﻿using FluentValidation;
 using Pursuit.Application.DTOs;
+using Pursuit.Application.Security;
 using Pursuit.Domain.Enums;
 
 namespace Pursuit.Application.Validators;
@@ -35,15 +36,14 @@ public class RegisterDtoValidator : AbstractValidator<RegisterDto>
         RuleFor(x => x.Role)
             .Cascade(CascadeMode.Stop)
             .NotEmpty().WithMessage("Role is required.")
-            .Must(role => Enum.TryParse<UserRole>(role, ignoreCase: true, out var parsed)
-                          && parsed != UserRole.Admin)
+            .Must(role => RegistrationRolePolicy.TryParse(role, out _))
             .WithMessage("Role must be either 'Employer' or 'JobSeeker'.");
 
         RuleFor(x => x.TenantName)
             .Cascade(CascadeMode.Stop)
             .NotEmpty().WithMessage("Company name is required for employer registration.")
             .MaximumLength(200).WithMessage("Company name must be 200 characters or less.")
-            .When(x => Enum.TryParse<UserRole>(x.Role, ignoreCase: true, out var role)
+            .When(x => RegistrationRolePolicy.TryParse(x.Role, out var role)
                        && role == UserRole.Employer);
     }
 }
