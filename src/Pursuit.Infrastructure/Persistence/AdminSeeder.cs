@@ -1,4 +1,7 @@
 ﻿using Microsoft.Extensions.Configuration;
+using System.Data;
+using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore.Storage;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using Pursuit.Application.Interfaces;
@@ -15,20 +18,34 @@ public static class AdminSeeder
 
         var userRepository = scope.ServiceProvider.GetRequiredService<IUserRepository>();
         var passwordHasher = scope.ServiceProvider.GetRequiredService<IPasswordHasher>();
+        var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
         var configuration = scope.ServiceProvider.GetRequiredService<IConfiguration>();
         var loggerFactory = scope.ServiceProvider.GetRequiredService<ILoggerFactory>();
         var logger = loggerFactory.CreateLogger("AdminSeeder");
+
+        if (!configuration.GetValue<bool>("AdminBootstrapSettings:Enabled"))
+        {
+            logger.LogInformation("Administrator bootstrap is disabled.");
+            return;
+        }
+
+        await using var transaction = await db.Database.BeginTransactionAsync(IsolationLevel.Serializable);
+        await AcquireBootstrapLockAsync(db);
 
         var adminExists = await userRepository.ExistsByRoleAsync(UserRole.Admin);
 
         if (adminExists)
         {
+            await transaction.CommitAsync();
             logger.LogInformation("Admin user already exists, skipping seed.");
             return;
         }
 
-        var email = configuration["AdminSeedSettings:Email"]!;
-        var password = configuration["AdminSeedSettings:Password"]!;
+        var email = configuration["AdminBootstrapSettings:Email"]!.ToLowerInvariant();
+        var password = configuration["AdminBootstrapSettings:Password"]!;
+
+        if (await userRepository.ExistsByEmailAsync(email))
+            throw new InvalidOperationException("The administrator bootstrap email is already assigned to another account.");
 
         var admin = new User
         {
@@ -42,7 +59,27 @@ public static class AdminSeeder
         };
 
         await userRepository.AddAsync(admin);
+        await transaction.CommitAsync();
 
         logger.LogInformation("Admin user seeded with email {Email}", email);
+    }
+
+    private static async Task AcquireBootstrapLockAsync(AppDbContext db)
+    {
+        await using var command = db.Database.GetDbConnection().CreateCommand();
+        command.Transaction = db.Database.CurrentTransaction!.GetDbTransaction();
+        command.CommandText = """
+            DECLARE @result int;
+            EXEC @result = sys.sp_getapplock
+                @Resource = N'Pursuit.AdminBootstrap',
+                @LockMode = N'Exclusive',
+                @LockOwner = N'Transaction',
+                @LockTimeout = 15000;
+            SELECT @result;
+            """;
+
+        var result = Convert.ToInt32(await command.ExecuteScalarAsync());
+        if (result < 0)
+            throw new InvalidOperationException("Could not acquire the administrator bootstrap lock.");
     }
 }

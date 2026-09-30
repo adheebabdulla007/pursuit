@@ -39,8 +39,7 @@ public static class DependencyInjection
         services.AddScoped<IUserRepository, UserRepository>();
         services.AddScoped<ITenantRepository, TenantRepository>();
 
-        var redisConnectionString = configuration["RedisSettings:ConnectionString"]
-            ?? throw new InvalidOperationException("RedisSettings:ConnectionString is not configured.");
+        var redisConnectionString = configuration["RedisSettings:ConnectionString"]!;
 
         var redisOptions = ConfigurationOptions.Parse(redisConnectionString);
         redisOptions.AbortOnConnectFail = false;
@@ -52,10 +51,10 @@ public static class DependencyInjection
 
         services.AddSingleton<IConnectionFactory>(_ => new ConnectionFactory
         {
-            HostName = configuration["RabbitMqSettings:Host"] ?? "localhost",
-            Port = int.Parse(configuration["RabbitMqSettings:Port"] ?? "5672"),
-            UserName = configuration["RabbitMqSettings:Username"] ?? "guest",
-            Password = configuration["RabbitMqSettings:Password"] ?? "guest"
+            HostName = configuration["RabbitMqSettings:Host"]!,
+            Port = int.Parse(configuration["RabbitMqSettings:Port"]!),
+            UserName = configuration["RabbitMqSettings:Username"]!,
+            Password = configuration["RabbitMqSettings:Password"]!
         });
         services.AddSingleton<IRabbitMqConnectionProvider, RabbitMqConnectionProvider>();
 

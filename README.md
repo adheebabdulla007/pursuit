@@ -285,7 +285,7 @@ docker run --name redis-pursuit -p 6379:6379 -d redis:alpine
 Then add to `appsettings.Development.json`:
 ```json
 {
-  "Redis": {
+  "RedisSettings": {
 	"ConnectionString": "localhost:6379"
   }
 }
@@ -299,7 +299,7 @@ docker run --name rabbitmq-pursuit -p 5672:5672 -p 15672:15672 -d rabbitmq:3-man
 Then add to `appsettings.Development.json`:
 ```json
 {
-  "RabbitMQ": {
+  "RabbitMqSettings": {
 	"Host": "localhost",
 	"Port": 5672,
 	"Username": "guest",
@@ -494,7 +494,13 @@ pursuit/
 
 ## ⚙️ Configuration
 
-### appsettings.json (Production)
+Production startup validates every required service setting before migrations or
+administrator creation. The tracked base settings contain no connection strings,
+service credentials, signing secret, or administrator password. See
+[`docs/production-configuration.md`](docs/production-configuration.md) for the
+deployment contract and first-administrator procedure.
+
+### Production settings
 
 ```json
 {
@@ -581,13 +587,13 @@ JwtSettings__ExpiryInMinutes=15
 JwtSettings__RefreshTokenExpiryInDays=7
 
 # Redis
-Redis__ConnectionString=prod-redis.redis.cache.windows.net:6379
+RedisSettings__ConnectionString=prod-redis.redis.cache.windows.net:6379
 
 # RabbitMQ
-RabbitMQ__Host=prod-rabbitmq.azure.com
-RabbitMQ__Port=5672
-RabbitMQ__Username=username
-RabbitMQ__Password=password
+RabbitMqSettings__Host=prod-rabbitmq.azure.com
+RabbitMqSettings__Port=5671
+RabbitMqSettings__Username=username
+RabbitMqSettings__Password=password
 ```
 
 ---
@@ -1005,8 +1011,8 @@ services:
 	environment:
 	  ConnectionStrings__DefaultConnection: "Server=sqlserver;Database=pursuit;User Id=sa;Password=YourPassword;TrustServerCertificate=true;"
 	  JwtSettings__Secret: "your-secret-key"
-	  Redis__ConnectionString: "redis:6379"
-	  RabbitMQ__Host: "rabbitmq"
+	  RedisSettings__ConnectionString: "redis:6379"
+	  RabbitMqSettings__Host: "rabbitmq"
 	depends_on:
 	  - sqlserver
 	  - redis

@@ -13,6 +13,7 @@ using Pursuit.Application.Security;
 using Pursuit.Domain.Enums;
 using System.Security.Claims;
 using Microsoft.AspNetCore.DataProtection;
+using Pursuit.API.Configuration;
 
 Log.Logger = new LoggerConfiguration()
     .WriteTo.Console()
@@ -23,7 +24,7 @@ try
     Log.Information("Starting Pursuit API");
 
     var builder = WebApplication.CreateBuilder(args);
-    AccessTokenPolicy.ReadLifetimeMinutes(builder.Configuration);
+    StartupConfigurationValidator.Validate(builder.Configuration, builder.Environment.IsProduction());
 
     builder.Host.UseSerilog((context, services, configuration) =>
         configuration.ReadFrom.Configuration(context.Configuration)
