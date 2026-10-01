@@ -1,5 +1,7 @@
 .git
 .gitignore
+.env
+.env.*
 .vs
 **/.vs
 **/bin
@@ -11,3 +13,7 @@
 docker-compose*.yml
 Dockerfile
 README.md
+client
+docs
+tests
+.github
