@@ -8,14 +8,35 @@ I built the project to practise the parts of backend work that become difficult 
 
 ## Try it locally
 
-You need Docker Desktop with Docker Compose.
+You need Docker Desktop or Docker Engine with Docker Compose. Confirm that the Docker engine is running before starting the stack:
+
+```text
+docker info
+```
+
+Create the local environment file.
+
+Windows PowerShell:
 
 ```powershell
 Copy-Item .env.example .env
+```
+
+macOS or Linux:
+
+```bash
+cp .env.example .env
+```
+
+Then start the complete stack:
+
+```text
 docker compose up --build -d --wait
 ```
 
 Open [http://localhost:5173](http://localhost:5173). The local administrator account is documented in [the demo guide](docs/demo-guide.md).
+
+The first start downloads several container images and creates an empty database. Follow the [five-minute product flow](docs/demo-guide.md#five-minute-product-flow) to create an employer, publish a job, and apply as a job seeker.
 
 Stop the stack with:
 
@@ -24,6 +45,8 @@ docker compose down
 ```
 
 Use `docker compose down -v` when you also want to delete the local SQL Server volume.
+
+If Compose reports that it cannot connect to the Docker API or daemon, start Docker Desktop or the Docker service and rerun `docker info` before trying again.
 
 ## What works
 

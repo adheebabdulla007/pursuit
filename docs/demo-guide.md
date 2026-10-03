@@ -4,14 +4,29 @@
 
 From the repository root:
 
+Windows PowerShell:
+
 ```powershell
 Copy-Item .env.example .env
+```
+
+macOS or Linux:
+
+```bash
+cp .env.example .env
+```
+
+Start the stack:
+
+```text
 docker compose up --build -d --wait
 ```
 
 Open [http://localhost:5173](http://localhost:5173).
 
 The first build downloads the .NET, Node, SQL Server, Redis, RabbitMQ, Azurite, and Nginx images. Later starts reuse those layers.
+
+If Docker reports a daemon connection error, start Docker Desktop or the Docker service and confirm `docker info` succeeds.
 
 ## Five-minute product flow
 
