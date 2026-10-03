@@ -6,8 +6,6 @@ Pursuit is a multi-tenant job board built with ASP.NET Core 10 and React 19. Emp
 
 I built the project to practise the parts of backend work that become difficult after the first CRUD screen: tenant boundaries, session revocation, concurrent refresh requests, browser security, caching, messaging, and repeatable tests.
 
-![Pursuit home page](docs/images/home.png)
-
 ## Try it locally
 
 You need Docker Desktop with Docker Compose.
@@ -46,12 +44,11 @@ Use `docker compose down -v` when you also want to delete the local SQL Server v
 
 ```mermaid
 flowchart LR
-    Browser[React client] -->|HTTP(S) + cookies| API[ASP.NET Core API]
-    API --> SQL[(SQL Server)]
-    API --> Redis[(Redis)]
-    API --> Blob[(Azure Blob / Azurite)]
-    API --> MQ[(RabbitMQ)]
-    MQ --> Worker[Background consumer]
+    browser["React client"] -->|HTTP and cookies| api["ASP.NET Core API"]
+    api --> sql["SQL Server"]
+    api --> redis["Redis"]
+    api --> blob["Azure Blob Storage or Azurite"]
+    api -->|Publish and consume events| rabbitmq["RabbitMQ"]
 ```
 
 The API follows a four-project structure:
