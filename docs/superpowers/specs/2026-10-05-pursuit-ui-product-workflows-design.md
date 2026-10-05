@@ -75,7 +75,7 @@ An administrator lands on `/admin` after login.
 One shared application shell provides:
 
 - A skip link to the main content.
-- Pursuit identity linked to the role-appropriate landing page.
+- Pursuit identity linked to `/jobs` for public/job-seeker sessions, `/employer/jobs` for employers, and `/admin` for administrators.
 - Persistent job search access for public users and job seekers.
 - Role-specific primary navigation.
 - Account identity and logout.
@@ -149,6 +149,8 @@ The desktop jobs experience contains:
 - A flexible selected-job detail region.
 
 Each result displays only verified job data: title, company, location, job type, salary range, active state where relevant, and posting date. The selected result has an edge/border treatment and `aria-current`; it does not rely only on background color.
+
+Public search returns active jobs only. A closed job remains available through its direct URL and application history so existing applicants do not lose context, but it is labeled closed and cannot accept applications.
 
 `/jobs` shows search and results. `/jobs/:id` keeps the result context visible on desktop while showing the selected job. Direct visits to `/jobs/:id` remain supported.
 
@@ -252,12 +254,13 @@ Use `@radix-ui/react-dialog` for mobile navigation and filters and `@radix-ui/re
 
 Add:
 
-`GET /api/jobs/mine?page=1&pageSize=10`
+`GET /api/jobs/mine?isActive=true&page=1&pageSize=10`
 
 Requirements:
 
 - Employer authorization.
 - Existing tenant scope.
+- Optional `isActive` filtering so the Open and Closed views are paginated independently.
 - Existing `PagedResult<JobDto>` response shape.
 - Stable newest-first ordering.
 - Return HTTP 400 when `page < 1` or `pageSize` is outside 1–50. The default page size is 10.
@@ -270,6 +273,12 @@ Paginate the touched list endpoints:
 - `GET /api/applications/job/{jobId}?page=1&pageSize=10`
 
 Both return `PagedResult<ApplicationDto>`, order by `CreatedAt` descending and then `Id` descending, and return HTTP 400 when `page < 1` or `pageSize` is outside 1–50. The default page size is 10. The employer endpoint retains tenant isolation; the job-seeker endpoint retains applicant isolation.
+
+Add `CompanyName` to `ApplicationDto` so application history can show verified employer context without another request. Application queries that map this field must include the job's tenant.
+
+Remove the stored `ResumeUrl` from serialized application DTOs. Resume storage location remains internal to the application service; employers receive only the existing authorized, time-limited download URL.
+
+Add `GET /api/applications/{id}` for employer-authorized application detail. The existing application tenant filter remains the ownership boundary, so another tenant receives the established non-disclosing not-found behavior.
 
 ### 12.3 Public job pagination
 
@@ -306,7 +315,7 @@ Mutation controls remain disabled while pending and prevent accidental duplicate
 - Associate field errors with inputs using `aria-describedby` and invalid state.
 - Use visible focus treatments on every interactive element.
 - Support keyboard operation for menus, dialogs, result selection, forms, and pagination.
-- Restore focus after dialogs and route-level actions where appropriate.
+- Restore focus to the invoking control after dialogs. After forward client-side navigation, focus the destination's main heading; browser Back/Forward retains history restoration behavior.
 - Announce asynchronous success and failure without stealing focus.
 - Use text plus visual treatment for every status.
 - Avoid mobile horizontal scrolling for primary content.
