@@ -76,11 +76,36 @@ public class JobRepository : Repository<Job>, IJobRepository
 
     public async Task<IReadOnlyList<Job>> GetByTenantAsync(
         Guid tenantId,
+        bool? isActive,
+        int page,
+        int pageSize,
         CancellationToken cancellationToken = default)
     {
-        return await _dbSet
+        var query = _dbSet
             .Include(j => j.Tenant)
-            .Where(j => j.TenantId == tenantId)
+            .Where(j => j.TenantId == tenantId);
+
+        if (isActive.HasValue)
+            query = query.Where(j => j.IsActive == isActive.Value);
+
+        return await query
+            .OrderByDescending(j => j.CreatedAt)
+            .ThenByDescending(j => j.Id)
+            .Skip((page - 1) * pageSize)
+            .Take(pageSize)
             .ToListAsync(cancellationToken);
+    }
+
+    public async Task<int> CountByTenantAsync(
+        Guid tenantId,
+        bool? isActive,
+        CancellationToken cancellationToken = default)
+    {
+        var query = _dbSet.Where(j => j.TenantId == tenantId);
+
+        if (isActive.HasValue)
+            query = query.Where(j => j.IsActive == isActive.Value);
+
+        return await query.CountAsync(cancellationToken);
     }
 }

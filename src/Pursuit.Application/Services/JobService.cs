@@ -128,14 +128,29 @@ public class JobService : IJobService
         await _cacheService.RemoveByPrefixAsync(SearchCacheKeyPrefix, cancellationToken);
     }
 
-    public async Task<IReadOnlyList<JobDto>> GetByTenantAsync(CancellationToken cancellationToken = default)
+    public async Task<PagedResult<JobDto>> GetByTenantAsync(
+        bool? isActive,
+        int page,
+        int pageSize,
+        CancellationToken cancellationToken = default)
     {
+        PaginationPolicy.EnsureValid(page, pageSize);
+
         var tenantId = _currentUserService.TenantId
             ?? throw new UnauthorizedAccessException("Employer tenant not found.");
 
-        var jobs = await _jobRepository.GetByTenantAsync(tenantId, cancellationToken);
+        var jobs = await _jobRepository.GetByTenantAsync(
+            tenantId, isActive, page, pageSize, cancellationToken);
+        var total = await _jobRepository.CountByTenantAsync(
+            tenantId, isActive, cancellationToken);
 
-        return jobs.Select(MapToDto).ToList();
+        return new PagedResult<JobDto>
+        {
+            Items = jobs.Select(MapToDto).ToList(),
+            TotalCount = total,
+            Page = page,
+            PageSize = pageSize
+        };
     }
 
     private static JobDto MapToDto(Job job) => new()

@@ -1,5 +1,6 @@
 ﻿using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using Pursuit.Application.Common;
 using Pursuit.Application.DTOs;
 using Pursuit.Application.Interfaces;
 using Pursuit.Domain.Enums;
@@ -28,6 +29,19 @@ public sealed class JobsController : ControllerBase
     {
         var result = await _jobService.SearchAsync(
             keyword, location, jobType, page, pageSize, cancellationToken);
+        return Ok(result);
+    }
+
+    [HttpGet("mine")]
+    [Authorize(Roles = "Employer")]
+    public async Task<IActionResult> GetMine(
+        [FromQuery] bool? isActive,
+        [FromQuery] int page = 1,
+        [FromQuery] int pageSize = PaginationPolicy.DefaultPageSize,
+        CancellationToken cancellationToken = default)
+    {
+        var result = await _jobService.GetByTenantAsync(
+            isActive, page, pageSize, cancellationToken);
         return Ok(result);
     }
 

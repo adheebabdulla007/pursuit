@@ -23,5 +23,13 @@ public interface IJobRepository : IRepository<Job>
 
     Task<IReadOnlyList<Job>> GetByTenantAsync(
         Guid tenantId,
+        bool? isActive,
+        int page,
+        int pageSize,
+        CancellationToken cancellationToken = default);
+
+    Task<int> CountByTenantAsync(
+        Guid tenantId,
+        bool? isActive,
         CancellationToken cancellationToken = default);
 }

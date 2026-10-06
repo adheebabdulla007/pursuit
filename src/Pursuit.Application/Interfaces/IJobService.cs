@@ -21,5 +21,9 @@ public interface IJobService
 
     Task DeleteAsync(Guid id, CancellationToken cancellationToken = default);
 
-    Task<IReadOnlyList<JobDto>> GetByTenantAsync(CancellationToken cancellationToken = default);
+    Task<PagedResult<JobDto>> GetByTenantAsync(
+        bool? isActive,
+        int page,
+        int pageSize,
+        CancellationToken cancellationToken = default);
 }
