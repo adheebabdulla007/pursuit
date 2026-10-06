@@ -17,7 +17,9 @@ describe('Input', () => {
   it('shows the error message and applies error border styling when error is set', () => {
     render(<Input id="email" label="Email" error="Email is required" />)
     expect(screen.getByText('Email is required')).toBeInTheDocument()
-    expect(screen.getByLabelText('Email')).toHaveClass('border-red-500')
+    expect(screen.getByLabelText('Email')).toHaveClass('border-danger')
+    expect(screen.getByLabelText('Email')).toHaveAttribute('aria-invalid', 'true')
+    expect(screen.getByText('Email is required')).toHaveAttribute('id', 'email-error')
   })
 
   it('does not render an error message when error is not set', () => {

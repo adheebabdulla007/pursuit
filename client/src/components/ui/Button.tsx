@@ -10,15 +10,15 @@ interface ButtonProps extends ButtonHTMLAttributes<HTMLButtonElement> {
 }
 
 const baseStyles =
-  'inline-flex items-center justify-center rounded-md font-medium transition-colors ' +
-  'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-primary-500 ' +
+  'inline-flex items-center justify-center gap-2 rounded-md font-semibold transition-colors ' +
+  'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-info focus-visible:ring-offset-2 focus-visible:ring-offset-canvas ' +
   'disabled:opacity-50 disabled:cursor-not-allowed disabled:pointer-events-none'
 
 const variantStyles: Record<ButtonVariant, string> = {
-  primary: 'bg-primary-600 text-white hover:bg-primary-700',
-  secondary: 'bg-neutral-100 text-neutral-900 hover:bg-neutral-200',
-  destructive: 'bg-red-600 text-white hover:bg-red-700',
-  ghost: 'bg-transparent text-neutral-700 hover:bg-neutral-100',
+  primary: 'bg-action text-white hover:bg-action-hover',
+  secondary: 'border border-line bg-surface text-ink hover:bg-canvas',
+  destructive: 'bg-danger text-white hover:bg-action-hover',
+  ghost: 'bg-transparent text-ink hover:bg-neutral-200',
 }
 
 const sizeStyles: Record<ButtonSize, string> = {

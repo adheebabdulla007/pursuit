@@ -15,7 +15,7 @@ const paddingClasses: Record<CardPadding, string> = {
 export const Card = forwardRef<HTMLDivElement, CardProps>(
   ({ padding = 'md', className = '', children, ...props }, ref) => {
     const classes = [
-      'bg-white rounded-lg shadow border border-neutral-200',
+      'rounded-lg border border-line bg-surface',
       paddingClasses[padding],
       className,
     ]

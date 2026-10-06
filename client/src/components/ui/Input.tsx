@@ -8,13 +8,14 @@ interface InputProps extends InputHTMLAttributes<HTMLInputElement> {
 }
 
 export const Input = forwardRef<HTMLInputElement, InputProps>(
-  ({ label, id, error, className = '', ...props }, ref) => {
+  ({ label, id, error, className = '', 'aria-describedby': ariaDescribedBy, ...props }, ref) => {
+    const errorId = `${id}-error`
     const inputStyles = [
-      'peer w-full rounded-md border px-3 pt-5 pb-2 text-base bg-white text-neutral-900',
-      'focus:outline-none focus:ring-2',
+      'peer w-full rounded-md border bg-surface px-3 pt-5 pb-2 text-base text-ink',
+      'focus:outline-none focus:ring-2 focus:ring-offset-1',
       error
-        ? 'border-red-500 focus:ring-red-500'
-        : 'border-neutral-300 focus:ring-primary-500',
+        ? 'border-danger focus:ring-danger'
+        : 'border-line focus:ring-info',
       className,
     ]
       .filter(Boolean)
@@ -30,12 +31,20 @@ export const Input = forwardRef<HTMLInputElement, InputProps>(
     return (
       <div className="w-full">
         <div className="relative">
-          <input ref={ref} id={id} placeholder=" " className={inputStyles} {...props} />
+          <input
+            ref={ref}
+            id={id}
+            placeholder=" "
+            className={inputStyles}
+            aria-invalid={error ? true : undefined}
+            aria-describedby={[ariaDescribedBy, error ? errorId : undefined].filter(Boolean).join(' ') || undefined}
+            {...props}
+          />
           <label htmlFor={id} className={labelStyles}>
             {label}
           </label>
         </div>
-        {error && <p className="mt-1 text-sm text-red-600">{error}</p>}
+        {error && <p id={errorId} className="mt-1 text-sm text-danger">{error}</p>}
       </div>
     )
   }

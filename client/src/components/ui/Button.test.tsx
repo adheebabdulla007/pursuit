@@ -11,19 +11,19 @@ describe('Button', () => {
 
   it('applies the primary variant by default', () => {
     render(<Button>Default</Button>)
-    expect(screen.getByRole('button')).toHaveClass('bg-primary-600')
+    expect(screen.getByRole('button')).toHaveClass('bg-action')
   })
 
   it('applies the destructive variant when specified', () => {
     render(<Button variant="destructive">Delete</Button>)
-    expect(screen.getByRole('button')).toHaveClass('bg-red-600')
+    expect(screen.getByRole('button')).toHaveClass('bg-danger')
   })
 
   it('merges a custom className with the base and variant classes', () => {
     render(<Button className="my-custom-class">Custom</Button>)
     const button = screen.getByRole('button')
     expect(button).toHaveClass('my-custom-class')
-    expect(button).toHaveClass('bg-primary-600')
+    expect(button).toHaveClass('bg-action')
   })
 
   it('forwards ref to the underlying button element', () => {

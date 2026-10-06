@@ -24,7 +24,7 @@ describe('Card', () => {
     render(<Card data-testid="card" className="my-custom-class">Content</Card>)
     const card = screen.getByTestId('card')
     expect(card).toHaveClass('my-custom-class')
-    expect(card).toHaveClass('bg-white')
+    expect(card).toHaveClass('bg-surface')
   })
 
   it('forwards ref to the underlying div element', () => {
