@@ -22,12 +22,20 @@ describe('JobCard', () => {
     renderJobCard()
 
     expect(screen.getByRole('heading', { name: 'Senior .NET Developer' })).toBeInTheDocument()
-    expect(screen.getByText('Acme Corp · Riyadh, Saudi Arabia')).toBeInTheDocument()
+    expect(screen.getByText('Acme Corp')).toBeInTheDocument()
+    expect(screen.getByText('Riyadh, Saudi Arabia')).toBeInTheDocument()
   })
 
   it('links to the correct job detail page', () => {
-    renderJobCard({ id: 'job-456' })
+    renderJobCard({ id: 'job-456', search: '?keyword=dotnet' })
 
-    expect(screen.getByRole('link')).toHaveAttribute('href', '/jobs/job-456')
+    expect(screen.getByRole('link')).toHaveAttribute('href', '/jobs/job-456?keyword=dotnet')
+  })
+
+  it('marks the selected result without relying on color alone', () => {
+    renderJobCard({ selected: true })
+
+    expect(screen.getByRole('link')).toHaveAttribute('aria-current', 'page')
+    expect(screen.getByText('Selected')).toBeInTheDocument()
   })
 })

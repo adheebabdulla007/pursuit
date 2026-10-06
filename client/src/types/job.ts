@@ -19,6 +19,7 @@ export type PagedResult<T> = {
   totalCount: number
   page: number
   pageSize: number
+  totalPages?: number
 }
 
 export type CreateJobRequest = {

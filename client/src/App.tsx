@@ -2,7 +2,6 @@ import { Routes, Route } from 'react-router-dom'
 import Navbar from './components/Navbar'
 import HomePage from './pages/HomePage'
 import JobsPage from './pages/JobsPage'
-import JobDetailPage from './pages/JobDetailPage'
 import LoginPage from './pages/LoginPage'
 import RegisterPage from './pages/RegisterPage'
 import CreateJobPage from './pages/CreateJobPage'
@@ -16,7 +15,7 @@ function App() {
       <Routes>
         <Route path="/" element={<HomePage />} />
         <Route path="/jobs" element={<JobsPage />} />
-        <Route path="/jobs/:id" element={<JobDetailPage />} />
+        <Route path="/jobs/:id" element={<JobsPage />} />
         <Route
           path="/jobs/new"
           element={

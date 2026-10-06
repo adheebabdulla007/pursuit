@@ -1,11 +1,13 @@
 import { useState } from 'react'
-import { useParams, Link } from 'react-router-dom'
+import { Link, useLocation, useParams } from 'react-router-dom'
 import { useQuery } from '@tanstack/react-query'
 import { fetchJobById } from '../api/jobs'
 import { applyToJob } from '../api/applications'
 import { useAuth } from '../context/useAuth'
-import { Card } from '../components/ui/Card'
-import { Button } from '../components/ui/Button'
+import { Alert } from '../components/ui/Alert'
+import { EmptyState } from '../components/ui/EmptyState'
+import { Skeleton } from '../components/ui/Skeleton'
+import { JobDetailContent, type JobApplicationState } from '../components/jobs/JobDetailContent'
 
 const ALLOWED_TYPES = [
   'application/pdf',
@@ -13,10 +15,14 @@ const ALLOWED_TYPES = [
 ]
 const MAX_SIZE_BYTES = 5 * 1024 * 1024
 
-function JobDetailPage() {
-  const { id } = useParams<{ id: string }>()
-  const { user } = useAuth()
+interface JobDetailPageProps {
+  embedded?: boolean
+}
 
+function JobDetailPage({ embedded = false }: JobDetailPageProps) {
+  const { id } = useParams<{ id: string }>()
+  const location = useLocation()
+  const { user } = useAuth()
   const [resumeFile, setResumeFile] = useState<File | null>(null)
   const [fileError, setFileError] = useState('')
   const [applyError, setApplyError] = useState('')
@@ -26,148 +32,97 @@ function JobDetailPage() {
   const { data, isLoading, isError, error } = useQuery({
     queryKey: ['job', id],
     queryFn: () => fetchJobById(id!),
-    enabled: !!id,
+    enabled: Boolean(id),
   })
 
-  function handleFileChange(e: React.ChangeEvent<HTMLInputElement>) {
-    const file = e.target.files?.[0] ?? null
+  function handleFileChange(event: React.ChangeEvent<HTMLInputElement>) {
+    const file = event.target.files?.[0] ?? null
     setFileError('')
-
-    if (!file) {
-      setResumeFile(null)
-      return
-    }
-
+    if (!file) return setResumeFile(null)
     if (!ALLOWED_TYPES.includes(file.type)) {
-      setFileError('Only PDF and DOCX files are allowed.')
       setResumeFile(null)
-      return
+      return setFileError('Only PDF and DOCX files are allowed.')
     }
-
     if (file.size > MAX_SIZE_BYTES) {
-      setFileError('File size must not exceed 5MB.')
       setResumeFile(null)
-      return
+      return setFileError('File size must not exceed 5MB.')
     }
-
     setResumeFile(file)
   }
 
-  async function handleApply(e: React.FormEvent) {
-    e.preventDefault()
+  async function handleApply(event: React.FormEvent) {
+    event.preventDefault()
     if (!resumeFile || !id) return
-
     setApplyError('')
     setIsSubmitting(true)
-
     try {
       await applyToJob(id, resumeFile)
       setHasApplied(true)
-    } catch (err) {
-      setApplyError(err instanceof Error ? err.message : 'Failed to submit application.')
+    } catch (caughtError) {
+      setApplyError(caughtError instanceof Error ? caughtError.message : 'Failed to submit application.')
     } finally {
       setIsSubmitting(false)
     }
   }
 
+  const returnToJobs = `/jobs${location.search}`
+  const frameClassName = embedded ? '' : 'min-h-screen bg-canvas px-4 py-8'
+  const contentClassName = embedded ? '' : 'mx-auto max-w-4xl'
+
   if (isLoading) {
     return (
-      <div className="min-h-screen bg-neutral-50 px-4 py-8">
-        <p className="max-w-3xl mx-auto text-neutral-600">Loading job...</p>
+      <div className={frameClassName}>
+        <div className={`${contentClassName} space-y-3`} aria-label="Loading job detail">
+          <Skeleton className="h-52 w-full" />
+          <Skeleton className="h-40 w-full" />
+        </div>
       </div>
     )
   }
 
   if (isError) {
-    if (error.message === 'NOT_FOUND') {
-      return (
-        <div className="min-h-screen bg-neutral-50 px-4 py-8">
-          <div className="max-w-3xl mx-auto">
-            <p className="text-neutral-700 mb-4">This job could not be found.</p>
-            <Link to="/jobs" className="text-primary-600 hover:underline">
-              Back to jobs
-            </Link>
-          </div>
-        </div>
-      )
-    }
+    const notFound = error.message === 'NOT_FOUND'
     return (
-      <div className="min-h-screen bg-neutral-50 px-4 py-8">
-        <p className="max-w-3xl mx-auto bg-red-50 border border-red-200 text-red-700 rounded-md p-3 text-sm">
-          Error loading job: {error.message}
-        </p>
+      <div className={frameClassName}>
+        <div className={contentClassName}>
+          {notFound ? (
+            <EmptyState
+              title="This job could not be found."
+              description="It may have been removed or the link may be incorrect."
+              action={<Link to={returnToJobs} className="font-semibold text-action underline">Back to jobs</Link>}
+            />
+          ) : (
+            <Alert variant="danger" title="Could not load this job">Try again in a moment.</Alert>
+          )}
+        </div>
       </div>
     )
   }
 
+  if (!data) return null
+
+  let applicationState: JobApplicationState
+  if (!data.isActive) {
+    applicationState = { kind: 'closed' }
+  } else if (!user) {
+    const returnTo = encodeURIComponent(location.pathname + location.search)
+    applicationState = { kind: 'visitor', loginHref: `/login?returnTo=${returnTo}` }
+  } else if (user.role !== 'JobSeeker') {
+    applicationState = { kind: 'employer' }
+  } else {
+    applicationState = {
+      kind: 'jobSeeker', resumeFile, fileError, applyError, isSubmitting, hasApplied,
+      onFileChange: handleFileChange, onSubmit: handleApply,
+    }
+  }
+
   return (
-    <div className="min-h-screen bg-neutral-50 px-4 py-8">
-      <div className="max-w-3xl mx-auto">
-        <Link to="/jobs" className="text-sm text-primary-600 hover:underline mb-4 inline-block">
-          ← Back to jobs
+    <div className={frameClassName}>
+      <div className={contentClassName}>
+        <Link to={returnToJobs} className="mb-4 inline-flex text-sm font-semibold text-action hover:underline">
+          ← Back to results
         </Link>
-
-        <Card className="mb-6">
-          <h1 className="text-2xl font-semibold text-neutral-900">{data?.title}</h1>
-          <p className="text-neutral-600 mt-1">
-            {data?.companyName} · {data?.location}
-          </p>
-          <p className="text-sm text-neutral-500 mt-1">{data?.jobType}</p>
-          <p className="text-sm font-medium text-neutral-700 mt-2">
-            ${data?.salaryMin.toLocaleString()} – ${data?.salaryMax.toLocaleString()}
-          </p>
-          <p className="text-neutral-700 mt-4 whitespace-pre-line">{data?.description}</p>
-        </Card>
-
-        {user?.role === 'JobSeeker' && (
-          <Card>
-            {hasApplied ? (
-              <p className="bg-green-50 border border-green-200 text-green-700 rounded-md p-3 text-sm">
-                Application submitted.
-              </p>
-            ) : (
-              <form onSubmit={handleApply} className="flex flex-col gap-4">
-                <div className="flex flex-col gap-1">
-                  <label htmlFor="resume" className="text-sm font-medium text-neutral-700">
-                    Resume (PDF or DOCX, max 5MB)
-                  </label>
-                  <input
-                    id="resume"
-                    type="file"
-                    accept=".pdf,.docx"
-                    onChange={handleFileChange}
-                    className="text-sm text-neutral-600
-                      file:mr-4 file:py-2 file:px-4 file:rounded-md file:border-0
-                      file:bg-primary-50 file:text-primary-700 file:text-sm file:font-medium
-                      hover:file:bg-primary-100"
-                  />
-                </div>
-                {fileError && (
-                  <p className="bg-red-50 border border-red-200 text-red-700 rounded-md p-3 text-sm">
-                    {fileError}
-                  </p>
-                )}
-                {applyError && (
-                  <p className="bg-red-50 border border-red-200 text-red-700 rounded-md p-3 text-sm">
-                    {applyError}
-                  </p>
-                )}
-                <Button type="submit" disabled={!resumeFile || isSubmitting}>
-                  {isSubmitting ? 'Submitting...' : 'Apply'}
-                </Button>
-              </form>
-            )}
-          </Card>
-        )}
-
-        {!user && (
-          <p className="text-neutral-600">
-            <Link to="/login" className="text-primary-600 hover:underline">
-              Log in
-            </Link>{' '}
-            as a job seeker to apply.
-          </p>
-        )}
+        <JobDetailContent job={data} applicationState={applicationState} />
       </div>
     </div>
   )

@@ -22,6 +22,7 @@ function renderJobDetailPage(id = 'job-1') {
       <MemoryRouter initialEntries={[`/jobs/${id}`]}>
         <Routes>
           <Route path="/jobs/:id" element={<JobDetailPage />} />
+          <Route path="/applications" element={<h1>My Applications</h1>} />
         </Routes>
       </MemoryRouter>
     </QueryClientProvider>
@@ -68,7 +69,8 @@ describe('JobDetailPage', () => {
     renderJobDetailPage()
 
     expect(await screen.findByText('Backend Engineer')).toBeInTheDocument()
-    expect(screen.getByText('Acme Corp · Remote')).toBeInTheDocument()
+    expect(screen.getAllByText('Acme Corp')).not.toHaveLength(0)
+    expect(screen.getByText('Remote')).toBeInTheDocument()
   })
 
   it('shows a not-found message when the job does not exist', async () => {
@@ -86,7 +88,20 @@ describe('JobDetailPage', () => {
 
     renderJobDetailPage()
 
-    expect(await screen.findByText(/as a job seeker to apply/i)).toBeInTheDocument()
+    expect(await screen.findByRole('link', { name: /log in to apply/i })).toHaveAttribute(
+      'href',
+      '/login?returnTo=%2Fjobs%2Fjob-1',
+    )
+  })
+
+  it('labels a closed job and never renders an application form', async () => {
+    mockUser({ id: 'u2', email: 'js@test.com', role: 'JobSeeker', tenantId: null })
+    vi.stubGlobal('fetch', vi.fn().mockResolvedValueOnce(jsonResponse({ ...job, isActive: false })))
+
+    renderJobDetailPage()
+
+    expect(await screen.findByRole('status')).toHaveTextContent('This job is closed')
+    expect(screen.queryByLabelText(/resume/i)).not.toBeInTheDocument()
   })
 
   it('hides the apply form for an Employer', async () => {
@@ -131,5 +146,6 @@ describe('JobDetailPage', () => {
     await user.click(screen.getByRole('button', { name: /apply/i }))
 
     expect(await screen.findByText('Application submitted.')).toBeInTheDocument()
+    expect(screen.getByRole('link', { name: 'View My Applications' })).toHaveAttribute('href', '/applications')
   })
 })
