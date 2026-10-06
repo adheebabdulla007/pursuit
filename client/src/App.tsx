@@ -6,6 +6,7 @@ import LoginPage from './pages/LoginPage'
 import RegisterPage from './pages/RegisterPage'
 import EmployerJobsPage from './pages/EmployerJobsPage'
 import JobEditorPage from './pages/JobEditorPage'
+import ApplicationReviewPage from './pages/ApplicationReviewPage'
 import AdminPage from './pages/AdminPage'
 import ProtectedRoute from './context/ProtectedRoute'
 
@@ -27,6 +28,8 @@ function App() {
         />
         <Route path="/employer/jobs/new" element={<ProtectedRoute requiredRole="Employer"><JobEditorPage /></ProtectedRoute>} />
         <Route path="/employer/jobs/:id/edit" element={<ProtectedRoute requiredRole="Employer"><JobEditorPage /></ProtectedRoute>} />
+        <Route path="/employer/jobs/:jobId/applications" element={<ProtectedRoute requiredRole="Employer"><ApplicationReviewPage /></ProtectedRoute>} />
+        <Route path="/employer/jobs/:jobId/applications/:applicationId" element={<ProtectedRoute requiredRole="Employer"><ApplicationReviewPage /></ProtectedRoute>} />
          <Route
           path="/admin"
           element={

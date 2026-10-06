@@ -94,6 +94,7 @@ export default function EmployerJobsPage() {
                   <p className="mt-1 text-sm text-muted">{job.location} · {job.jobType}</p>
                 </div>
                 <div className="flex flex-wrap gap-2">
+                  <Link to={`/employer/jobs/${job.id}/applications`} className="inline-flex h-8 items-center rounded-md border border-line bg-surface px-3 text-sm font-semibold text-ink hover:bg-canvas">Applications</Link>
                   <Link to={`/employer/jobs/${job.id}/edit`} className="inline-flex h-8 items-center rounded-md border border-line bg-surface px-3 text-sm font-semibold text-ink hover:bg-canvas">Edit</Link>
                   <ConfirmationDialog
                     trigger={<Button type="button" size="sm" variant={job.isActive ? 'destructive' : 'secondary'} aria-label={`${job.isActive ? 'Close' : 'Reopen'} ${job.title}`} disabled={mutation.isPending}>{mutation.isPending && mutation.variables?.id === job.id ? 'Working…' : job.isActive ? 'Close' : 'Reopen'}</Button>}

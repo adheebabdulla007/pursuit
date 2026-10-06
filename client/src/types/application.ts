@@ -4,9 +4,9 @@ export type ApplicationDto = {
   id: string
   jobId: string
   jobTitle: string
+  companyName: string
   applicantId: string
   applicantName: string
-  resumeUrl: string
   status: ApplicationStatus
   createdAt: string
 }
