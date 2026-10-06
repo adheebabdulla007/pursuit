@@ -19,6 +19,8 @@ public interface IJobRepository : IRepository<Job>
         JobType? jobType,
         CancellationToken cancellationToken = default);
 
+    Task<int> CountAllAsync(CancellationToken cancellationToken = default);
+
     Task<IReadOnlyList<Job>> GetByTenantAsync(
         Guid tenantId,
         CancellationToken cancellationToken = default);

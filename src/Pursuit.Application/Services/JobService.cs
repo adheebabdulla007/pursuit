@@ -1,5 +1,6 @@
 ﻿using Pursuit.Application.DTOs;
 using Pursuit.Application.Interfaces;
+using Pursuit.Application.Common;
 using Pursuit.Domain.Entities;
 using Pursuit.Domain.Enums;
 using Pursuit.Domain.Exceptions;
@@ -42,6 +43,8 @@ public class JobService : IJobService
         int pageSize,
         CancellationToken cancellationToken = default)
     {
+        PaginationPolicy.EnsureValid(page, pageSize);
+
         var cacheKey = $"{SearchCacheKeyPrefix}{title}:{location}:{jobType}:{page}:{pageSize}";
 
         var cached = await _cacheService.GetAsync<PagedResult<JobDto>>(cacheKey, cancellationToken);

@@ -27,7 +27,9 @@ public class JobRepository : Repository<Job>, IJobRepository
         int pageSize,
         CancellationToken cancellationToken = default)
     {
-        var query = _dbSet.Include(j => j.Tenant).AsQueryable();
+        var query = _dbSet
+            .Include(j => j.Tenant)
+            .Where(j => j.IsActive);
 
         if (!string.IsNullOrWhiteSpace(title))
             query = query.Where(j => j.Title.Contains(title));
@@ -39,7 +41,8 @@ public class JobRepository : Repository<Job>, IJobRepository
             query = query.Where(j => j.JobType == jobType.Value);
 
         return await query
-            .OrderBy(j => j.CreatedAt)
+            .OrderByDescending(j => j.CreatedAt)
+            .ThenByDescending(j => j.Id)
             .Skip((page - 1) * pageSize)
             .Take(pageSize)
             .ToListAsync(cancellationToken);
@@ -51,7 +54,8 @@ public class JobRepository : Repository<Job>, IJobRepository
         JobType? jobType,
         CancellationToken cancellationToken = default)
     {
-        var query = _dbSet.Include(j => j.Tenant).AsQueryable();
+        var query = _dbSet
+            .Where(j => j.IsActive);
 
         if (!string.IsNullOrWhiteSpace(title))
             query = query.Where(j => j.Title.Contains(title));
@@ -63,6 +67,11 @@ public class JobRepository : Repository<Job>, IJobRepository
             query = query.Where(j => j.JobType == jobType.Value);
 
         return await query.CountAsync(cancellationToken);
+    }
+
+    public async Task<int> CountAllAsync(CancellationToken cancellationToken = default)
+    {
+        return await _dbSet.CountAsync(cancellationToken);
     }
 
     public async Task<IReadOnlyList<Job>> GetByTenantAsync(

@@ -25,7 +25,7 @@ public class StatsService : IStatsService
         var totalUsers = await _userRepository.CountAsync(cancellationToken);
         var totalEmployers = await _userRepository.CountByRoleAsync(UserRole.Employer, cancellationToken);
         var totalJobSeekers = await _userRepository.CountByRoleAsync(UserRole.JobSeeker, cancellationToken);
-        var totalJobs = await _jobRepository.CountAsync(null, null, null, cancellationToken);
+        var totalJobs = await _jobRepository.CountAllAsync(cancellationToken);
         var totalApplications = await _applicationRepository.CountAsync(cancellationToken);
 
         return new AdminStatsDto
