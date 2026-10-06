@@ -23,6 +23,12 @@ export async function fetchApplicationsByJob(jobId: string, page: number, pageSi
   return response.json()
 }
 
+export async function fetchMyApplications(page: number, pageSize: number): Promise<PagedResult<ApplicationDto>> {
+  const response = await apiFetch(`${API_BASE_URL}/api/applications/my?page=${page}&pageSize=${pageSize}`)
+  if (!response.ok) throw new Error(await extractErrorMessage(response))
+  return response.json()
+}
+
 export async function fetchApplication(id: string): Promise<ApplicationDto> {
   const response = await apiFetch(`${API_BASE_URL}/api/applications/${id}`)
   if (!response.ok) throw new Error(await extractErrorMessage(response))
