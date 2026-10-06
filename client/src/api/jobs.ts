@@ -1,4 +1,4 @@
-import type { Job, JobType, PagedResult, CreateJobRequest } from '../types/job'
+import type { Job, JobType, PagedResult, CreateJobRequest, UpdateJobRequest } from '../types/job'
 import { API_BASE_URL } from '../config/env'
 import { extractErrorMessage } from './shared'
 import { apiFetch } from './fetchClient'
@@ -9,6 +9,12 @@ export type JobSearchParams = {
   keyword?: string
   location?: string
   jobType?: JobType
+}
+
+export type EmployerJobSearchParams = {
+  isActive?: boolean
+  page?: number
+  pageSize?: number
 }
 
 export async function fetchJobs(params: JobSearchParams): Promise<PagedResult<Job>> {
@@ -38,9 +44,29 @@ export async function fetchJobById(id: string): Promise<Job> {
   return response.json()
 }
 
+export async function fetchMyJobs(params: EmployerJobSearchParams): Promise<PagedResult<Job>> {
+  const query = new URLSearchParams()
+  if (params.isActive !== undefined) query.set('isActive', String(params.isActive))
+  if (params.page) query.set('page', String(params.page))
+  if (params.pageSize) query.set('pageSize', String(params.pageSize))
+  const response = await apiFetch(`${API_BASE_URL}/api/jobs/mine?${query.toString()}`)
+  if (!response.ok) throw new Error(await extractErrorMessage(response))
+  return response.json()
+}
+
 export async function createJob(data: CreateJobRequest): Promise<Job> {
   const response = await apiFetch(`${API_BASE_URL}/api/jobs`, {
     method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(data),
+  })
+  if (!response.ok) throw new Error(await extractErrorMessage(response))
+  return response.json()
+}
+
+export async function updateJob(id: string, data: UpdateJobRequest): Promise<Job> {
+  const response = await apiFetch(`${API_BASE_URL}/api/jobs/${id}`, {
+    method: 'PUT',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify(data),
   })

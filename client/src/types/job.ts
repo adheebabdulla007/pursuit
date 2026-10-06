@@ -30,3 +30,7 @@ export type CreateJobRequest = {
   salaryMax: number
   jobType: JobType
 }
+
+export type UpdateJobRequest = CreateJobRequest & {
+  isActive: boolean
+}
