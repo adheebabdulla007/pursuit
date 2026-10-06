@@ -8,11 +8,15 @@ public interface IApplicationService
         CreateApplicationDto dto,
         CancellationToken cancellationToken = default);
 
-    Task<IReadOnlyList<ApplicationDto>> GetMyApplicationsAsync(
+    Task<PagedResult<ApplicationDto>> GetMyApplicationsAsync(
+        int page,
+        int pageSize,
         CancellationToken cancellationToken = default);
 
-    Task<IReadOnlyList<ApplicationDto>> GetByJobAsync(
+    Task<PagedResult<ApplicationDto>> GetByJobAsync(
         Guid jobId,
+        int page,
+        int pageSize,
         CancellationToken cancellationToken = default);
 
     Task<ApplicationDto> UpdateStatusAsync(
@@ -21,6 +25,10 @@ public interface IApplicationService
         CancellationToken cancellationToken = default);
 
     Task<ApplicationDto> GetByIdAsync(
+        Guid applicationId,
+        CancellationToken cancellationToken = default);
+
+    Task<string> GetResumeStorageUrlAsync(
         Guid applicationId,
         CancellationToken cancellationToken = default);
 }

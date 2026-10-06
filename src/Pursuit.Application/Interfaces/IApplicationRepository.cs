@@ -7,11 +7,19 @@ public interface IApplicationRepository : IRepository<Domain.Entities.Applicatio
 {
     Task<IReadOnlyList<Domain.Entities.Application>> GetByJobAsync(
         Guid jobId,
+        int page,
+        int pageSize,
         CancellationToken cancellationToken = default);
+
+    Task<int> CountByJobAsync(Guid jobId, CancellationToken cancellationToken = default);
 
     Task<IReadOnlyList<Domain.Entities.Application>> GetByApplicantAsync(
         Guid applicantId,
+        int page,
+        int pageSize,
         CancellationToken cancellationToken = default);
+
+    Task<int> CountByApplicantAsync(Guid applicantId, CancellationToken cancellationToken = default);
 
     Task<bool> ExistsAsync(
         Guid jobId,

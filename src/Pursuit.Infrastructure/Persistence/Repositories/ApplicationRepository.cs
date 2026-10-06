@@ -13,24 +13,48 @@ public class ApplicationRepository : Repository<Domain.Entities.Application>, IA
 
     public async Task<IReadOnlyList<Domain.Entities.Application>> GetByJobAsync(
         Guid jobId,
+        int page,
+        int pageSize,
         CancellationToken cancellationToken = default)
     {
         return await _dbSet
             .Include(a => a.Job)
+                .ThenInclude(j => j.Tenant)
             .Include(a => a.Applicant)
             .Where(a => a.JobId == jobId)
+            .OrderByDescending(a => a.CreatedAt)
+            .ThenByDescending(a => a.Id)
+            .Skip((page - 1) * pageSize)
+            .Take(pageSize)
             .ToListAsync(cancellationToken);
+    }
+
+    public async Task<int> CountByJobAsync(Guid jobId, CancellationToken cancellationToken = default)
+    {
+        return await _dbSet.CountAsync(a => a.JobId == jobId, cancellationToken);
     }
 
     public async Task<IReadOnlyList<Domain.Entities.Application>> GetByApplicantAsync(
         Guid applicantId,
+        int page,
+        int pageSize,
         CancellationToken cancellationToken = default)
     {
         return await _dbSet
             .Include(a => a.Applicant)
             .Include(a => a.Job)
+                .ThenInclude(j => j.Tenant)
             .Where(a => a.ApplicantId == applicantId)
+            .OrderByDescending(a => a.CreatedAt)
+            .ThenByDescending(a => a.Id)
+            .Skip((page - 1) * pageSize)
+            .Take(pageSize)
             .ToListAsync(cancellationToken);
+    }
+
+    public async Task<int> CountByApplicantAsync(Guid applicantId, CancellationToken cancellationToken = default)
+    {
+        return await _dbSet.CountAsync(a => a.ApplicantId == applicantId, cancellationToken);
     }
 
     public async Task<bool> ExistsAsync(
@@ -57,6 +81,7 @@ public class ApplicationRepository : Repository<Domain.Entities.Application>, IA
     {
         return await _dbSet
             .Include(a => a.Job)
+                .ThenInclude(j => j.Tenant)
             .Include(a => a.Applicant)
             .FirstOrDefaultAsync(a => a.Id == id, cancellationToken);
     }

@@ -1,6 +1,7 @@
 ﻿using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Pursuit.API.Middleware;
+using Pursuit.Application.Common;
 using Pursuit.Application.DTOs;
 using Pursuit.Application.Interfaces;
 
@@ -64,9 +65,11 @@ public sealed class ApplicationsController : ControllerBase
     [HttpGet("my")]
     [Authorize(Roles = "JobSeeker")]
     public async Task<IActionResult> GetMyApplications(
-        CancellationToken cancellationToken)
+        [FromQuery] int page = 1,
+        [FromQuery] int pageSize = PaginationPolicy.DefaultPageSize,
+        CancellationToken cancellationToken = default)
     {
-        var result = await _applicationService.GetMyApplicationsAsync(cancellationToken);
+        var result = await _applicationService.GetMyApplicationsAsync(page, pageSize, cancellationToken);
         return Ok(result);
     }
 
@@ -74,9 +77,11 @@ public sealed class ApplicationsController : ControllerBase
     [Authorize(Roles = "Employer")]
     public async Task<IActionResult> GetByJob(
         Guid jobId,
-        CancellationToken cancellationToken)
+        [FromQuery] int page = 1,
+        [FromQuery] int pageSize = PaginationPolicy.DefaultPageSize,
+        CancellationToken cancellationToken = default)
     {
-        var result = await _applicationService.GetByJobAsync(jobId, cancellationToken);
+        var result = await _applicationService.GetByJobAsync(jobId, page, pageSize, cancellationToken);
         return Ok(result);
     }
 
@@ -97,14 +102,22 @@ public sealed class ApplicationsController : ControllerBase
         Guid id,
         CancellationToken cancellationToken)
     {
-        var application = await _applicationService.GetByIdAsync(id, cancellationToken);
+        var resumeStorageUrl = await _applicationService.GetResumeStorageUrlAsync(id, cancellationToken);
 
-        if (string.IsNullOrEmpty(application.ResumeUrl))
+        if (string.IsNullOrEmpty(resumeStorageUrl))
             return NotFound(value: new ErrorResponse { StatusCode = 404, Message = "No resume found for this application." });
 
         var sasUrl = await _blobStorageService.GetDownloadUrlAsync(
-            application.ResumeUrl, TimeSpan.FromMinutes(15), cancellationToken);
+            resumeStorageUrl, TimeSpan.FromMinutes(15), cancellationToken);
 
         return Ok(new { downloadUrl = sasUrl });
+    }
+
+    [HttpGet("{id:guid}")]
+    [Authorize(Roles = "Employer")]
+    public async Task<IActionResult> GetById(Guid id, CancellationToken cancellationToken)
+    {
+        var result = await _applicationService.GetByIdAsync(id, cancellationToken);
+        return Ok(result);
     }
 }

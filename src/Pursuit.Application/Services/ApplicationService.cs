@@ -1,5 +1,6 @@
 ﻿using Microsoft.Extensions.Logging;
 using Pursuit.Application.DTOs;
+using Pursuit.Application.Common;
 using Pursuit.Application.Interfaces;
 using Pursuit.Application.Messages;
 using Pursuit.Domain.Entities;
@@ -100,20 +101,46 @@ public class ApplicationService : IApplicationService
         await _messagePublisher.PublishAsync(message, cancellationToken);
     }
 
-    public async Task<IReadOnlyList<ApplicationDto>> GetMyApplicationsAsync(
+    public async Task<PagedResult<ApplicationDto>> GetMyApplicationsAsync(
+        int page,
+        int pageSize,
         CancellationToken cancellationToken = default)
     {
+        PaginationPolicy.EnsureValid(page, pageSize);
+
         var applicantId = _currentUserService.UserId;
-        var applications = await _applicationRepository.GetByApplicantAsync(applicantId, cancellationToken);
-        return applications.Select(a => MapToDto(a, a.Job, a.Applicant)).ToList();
+        var applications = await _applicationRepository.GetByApplicantAsync(
+            applicantId, page, pageSize, cancellationToken);
+        var total = await _applicationRepository.CountByApplicantAsync(applicantId, cancellationToken);
+
+        return new PagedResult<ApplicationDto>
+        {
+            Items = applications.Select(a => MapToDto(a, a.Job, a.Applicant)).ToList(),
+            TotalCount = total,
+            Page = page,
+            PageSize = pageSize
+        };
     }
 
-    public async Task<IReadOnlyList<ApplicationDto>> GetByJobAsync(
+    public async Task<PagedResult<ApplicationDto>> GetByJobAsync(
         Guid jobId,
+        int page,
+        int pageSize,
         CancellationToken cancellationToken = default)
     {
-        var applications = await _applicationRepository.GetByJobAsync(jobId, cancellationToken);
-        return applications.Select(a => MapToDto(a, a.Job, a.Applicant)).ToList();
+        PaginationPolicy.EnsureValid(page, pageSize);
+
+        var applications = await _applicationRepository.GetByJobAsync(
+            jobId, page, pageSize, cancellationToken);
+        var total = await _applicationRepository.CountByJobAsync(jobId, cancellationToken);
+
+        return new PagedResult<ApplicationDto>
+        {
+            Items = applications.Select(a => MapToDto(a, a.Job, a.Applicant)).ToList(),
+            TotalCount = total,
+            Page = page,
+            PageSize = pageSize
+        };
     }
 
     public async Task<ApplicationDto> UpdateStatusAsync(
@@ -141,14 +168,24 @@ public class ApplicationService : IApplicationService
         return MapToDto(application, application.Job, application.Applicant);
     }
 
+    public async Task<string> GetResumeStorageUrlAsync(
+        Guid applicationId,
+        CancellationToken cancellationToken = default)
+    {
+        var application = await _applicationRepository.GetByIdWithDetailsAsync(applicationId, cancellationToken)
+            ?? throw new KeyNotFoundException($"Application with ID {applicationId} was not found.");
+
+        return application.ResumeUrl;
+    }
+
     private static ApplicationDto MapToDto(Domain.Entities.Application application, Job? job, User? applicant) => new()
     {
         Id = application.Id,
         JobId = application.JobId,
         JobTitle = job?.Title ?? string.Empty,
+        CompanyName = job?.Tenant?.Name ?? string.Empty,
         ApplicantId = application.ApplicantId,
         ApplicantName = applicant is not null ? $"{applicant.FirstName} {applicant.LastName}" : string.Empty,
-        ResumeUrl = application.ResumeUrl,
         Status = application.Status,
         CreatedAt = application.CreatedAt
     };
