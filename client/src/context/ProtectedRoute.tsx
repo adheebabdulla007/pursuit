@@ -1,6 +1,7 @@
 import type { ReactNode } from 'react'
 import { Navigate } from 'react-router-dom'
 import { useAuth } from './useAuth'
+import { roleHomePath } from '../routes/roleHomePath'
 
 interface ProtectedRouteProps {
   children: ReactNode
@@ -19,7 +20,7 @@ function ProtectedRoute({ children, requiredRole }: ProtectedRouteProps) {
   }
 
   if (requiredRole && user.role !== requiredRole) {
-    return <Navigate to="/jobs" replace />
+    return <Navigate to={roleHomePath(user.role)} replace />
   }
 
   return <>{children}</>

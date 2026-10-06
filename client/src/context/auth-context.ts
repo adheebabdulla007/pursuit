@@ -4,8 +4,8 @@ import type { CurrentUser, LoginRequest, RegisterRequest } from '../types/auth'
 export interface AuthContextType {
   user: CurrentUser | null
   isLoading: boolean
-  login: (credentials: LoginRequest) => Promise<void>
-  register: (data: RegisterRequest) => Promise<void>
+  login: (credentials: LoginRequest) => Promise<CurrentUser>
+  register: (data: RegisterRequest) => Promise<CurrentUser>
   logout: () => Promise<void>
 }
 

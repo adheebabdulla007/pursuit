@@ -12,6 +12,7 @@ function renderRegisterPage() {
         <Routes>
           <Route path="/register" element={<RegisterPage />} />
           <Route path="/jobs" element={<div>Jobs Page Stub</div>} />
+          <Route path="/employer/jobs" element={<div>Employer Jobs Stub</div>} />
         </Routes>
       </AuthProvider>
     </MemoryRouter>
@@ -71,7 +72,7 @@ describe('RegisterPage', () => {
   await user.type(screen.getByLabelText('Company Name'), 'Acme Corp')
   await user.click(screen.getByRole('button', { name: /register/i }))
 
-  expect(await screen.findByText('Jobs Page Stub')).toBeInTheDocument()
+  expect(await screen.findByText('Employer Jobs Stub')).toBeInTheDocument()
 
   const registerCall = fetchMock.mock.calls[4]
   const sentBody = JSON.parse(registerCall[1].body)

@@ -4,6 +4,8 @@ import { useAuth } from '../context/useAuth'
 import { Button } from '../components/ui/Button'
 import { Input } from '../components/ui/Input'
 import { Card } from '../components/ui/Card'
+import { Alert } from '../components/ui/Alert'
+import { roleHomePath } from '../routes/roleHomePath'
 
 function LoginPage() {
   const [email, setEmail] = useState('')
@@ -19,20 +21,19 @@ function LoginPage() {
     setIsLoading(true)
 
     try {
-      await login({ email, password })
-      navigate('/jobs')
+      const user = await login({ email, password })
+      navigate(roleHomePath(user.role))
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Login failed. Check your credentials.')
-      console.error(err)
     } finally {
       setIsLoading(false)
     }
   }
 
   return (
-  <div className="min-h-screen flex items-center justify-center bg-neutral-50 px-4">
-    <Card className="w-full max-w-md">
-      <h1 className="text-2xl font-semibold text-neutral-900 mb-6">Login</h1>
+  <div className="min-h-[calc(100vh-4rem)] bg-canvas px-4 py-12">
+    <Card className="mx-auto w-full max-w-md border-t-4 border-t-action">
+      <p className="text-sm font-bold uppercase tracking-[0.16em] text-action">Career desk</p><h1 className="mb-2 mt-1 text-3xl font-extrabold text-ink">Welcome back</h1><p className="mb-6 text-sm text-muted">Sign in to continue your work.</p>
       <form onSubmit={handleSubmit} className="flex flex-col gap-4">
         <Input
           id="email"
@@ -49,9 +50,7 @@ function LoginPage() {
           onChange={(e) => setPassword(e.target.value)}
         />
         {error && (
-          <p className="bg-red-50 border border-red-200 text-red-700 rounded-md p-3 text-sm">
-            {error}
-          </p>
+          <Alert variant="danger">{error}</Alert>
         )}
         <Button type="submit" disabled={isLoading} className="w-full">
           {isLoading ? 'Logging in...' : 'Log In'}

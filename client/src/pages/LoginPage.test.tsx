@@ -40,7 +40,7 @@ beforeEach(() => {
 })
 
 describe('LoginPage', () => {
-  it('logs in successfully and navigates to /jobs', async () => {
+  it('logs in successfully and navigates to the job seeker home', async () => {
   mockFetchSequence([
     // mount-time getMe() inside AuthProvider — not authenticated yet
     () => jsonResponse({ message: 'Not authenticated' }, 401),

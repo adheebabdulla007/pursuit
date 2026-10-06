@@ -14,6 +14,6 @@ export interface RegisterRequest {
 
 export interface CurrentUser {
   email: string
-  role: string
+  role: 'Employer' | 'JobSeeker' | 'Admin'
   tenantId: string | null
 }

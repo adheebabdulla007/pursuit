@@ -82,8 +82,8 @@ describe('AdminPage', () => {
 
     expect(await screen.findByText('42')).toBeInTheDocument()
     expect(screen.getByText('Total Users')).toBeInTheDocument()
-    expect(await screen.findByText('Ada Lovelace')).toBeInTheDocument()
-    expect(screen.getByText('Active')).toBeInTheDocument()
+    expect((await screen.findAllByText('Ada Lovelace')).length).toBeGreaterThan(0)
+    expect(screen.getAllByText('Active').length).toBeGreaterThan(0)
   })
 
   it('deactivates an active user and reflects the updated status after refetch', async () => {
@@ -100,10 +100,10 @@ describe('AdminPage', () => {
     renderAdminPage()
     const user = userEvent.setup()
 
-    await user.click(await screen.findByRole('button', { name: 'Deactivate' }))
+    await user.click((await screen.findAllByRole('button', { name: 'Deactivate' }))[0])
 
-    expect(await screen.findByRole('button', { name: 'Activate' })).toBeInTheDocument()
-    expect(screen.getByText('Inactive')).toBeInTheDocument()
+    expect((await screen.findAllByRole('button', { name: 'Activate' })).length).toBeGreaterThan(0)
+    expect(screen.getAllByText('Inactive').length).toBeGreaterThan(0)
   })
 
   it('shows an error message when the status update fails, without changing the row', async () => {
@@ -117,10 +117,10 @@ describe('AdminPage', () => {
     renderAdminPage()
     const user = userEvent.setup()
 
-    await user.click(await screen.findByRole('button', { name: 'Deactivate' }))
+    await user.click((await screen.findAllByRole('button', { name: 'Deactivate' }))[0])
 
     expect(await screen.findByText('Cannot deactivate yourself')).toBeInTheDocument()
-    expect(screen.getByRole('button', { name: 'Deactivate' })).toBeInTheDocument()
+    expect(screen.getAllByRole('button', { name: 'Deactivate' }).length).toBeGreaterThan(0)
   })
 
   it('disables Previous on the first page and Next on the last page', async () => {

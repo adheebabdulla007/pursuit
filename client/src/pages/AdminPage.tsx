@@ -3,6 +3,7 @@ import { useQuery, useQueryClient } from '@tanstack/react-query'
 import { fetchUsers, fetchStats, updateUserStatus } from '../api/admin'
 import { Card } from '../components/ui/Card'
 import { Button } from '../components/ui/Button'
+import { StatusBadge } from '../components/ui/StatusBadge'
 
 const PAGE_SIZE = 10
 
@@ -48,9 +49,9 @@ function AdminPage() {
     : []
 
   return (
-    <div className="min-h-screen bg-neutral-50 px-4 py-8">
-      <div className="max-w-4xl mx-auto">
-        <h1 className="text-2xl font-semibold text-neutral-900 mb-6">Admin Panel</h1>
+    <div className="min-h-screen bg-canvas px-4 py-8 sm:px-6 lg:px-8">
+      <div className="mx-auto max-w-6xl">
+        <p className="text-sm font-bold uppercase tracking-[0.16em] text-action">Operations</p><h1 className="mb-6 mt-1 text-3xl font-extrabold text-ink">Admin desk</h1>
 
         <section className="mb-8">
           <h2 className="text-lg font-semibold text-neutral-900 mb-3">Stats</h2>
@@ -61,12 +62,12 @@ function AdminPage() {
             </p>
           )}
           {statsQuery.data && (
-            <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-4">
+            <div className="grid grid-cols-2 divide-x divide-y divide-line overflow-hidden rounded-lg border border-line bg-surface sm:grid-cols-3 lg:grid-cols-5">
               {statsItems.map((item) => (
-                <Card key={item.label} padding="sm">
+                <div key={item.label} className="p-4">
                   <p className="text-2xl font-semibold text-neutral-900">{item.value}</p>
                   <p className="text-sm text-neutral-600 mt-1">{item.label}</p>
-                </Card>
+                </div>
               ))}
             </div>
           )}
@@ -87,7 +88,10 @@ function AdminPage() {
           )}
           {usersQuery.data && (
             <>
-              <Card padding="none" className="overflow-x-auto">
+              <div className="space-y-3 md:hidden">
+                {usersQuery.data.items.map((u) => <Card key={u.id} padding="sm"><div className="flex items-start justify-between gap-3"><div><h3 className="font-bold text-ink">{u.firstName} {u.lastName}</h3><p className="text-sm text-muted">{u.email}</p></div><StatusBadge status={u.isActive ? 'Active' : 'Inactive'} /></div><dl className="mt-4 grid grid-cols-2 gap-3 text-sm"><div><dt className="text-muted">Role</dt><dd className="font-semibold text-ink">{u.role}</dd></div><div><dt className="text-muted">Joined</dt><dd className="font-semibold text-ink">{new Date(u.createdAt).toLocaleDateString()}</dd></div></dl><Button className="mt-4" variant={u.isActive ? 'destructive' : 'secondary'} size="sm" onClick={() => handleToggleStatus(u.id, u.isActive)} disabled={pendingUserId === u.id}>{pendingUserId === u.id ? 'Updating...' : u.isActive ? 'Deactivate' : 'Activate'}</Button></Card>)}
+              </div>
+              <Card padding="none" className="hidden overflow-x-auto md:block">
                 <table className="w-full text-sm">
                   <thead>
                     <tr className="border-b border-neutral-200 text-left text-neutral-500">

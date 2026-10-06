@@ -18,11 +18,13 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   async function login(credentials: LoginRequest) {
     const currentUser = await apiLogin(credentials)
     setUser(currentUser)
+    return currentUser
   }
 
   async function register(data: RegisterRequest) {
     const currentUser = await apiRegister(data)
     setUser(currentUser)
+    return currentUser
   }
 
   async function logout() {

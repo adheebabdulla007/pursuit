@@ -36,23 +36,21 @@ function HomePage() {
   }
 
   return (
-    <div className="min-h-screen bg-neutral-50">
+    <div className="min-h-screen bg-canvas">
       {/* Hero */}
-      <section className="bg-white border-b border-neutral-200">
-        <div className="max-w-3xl mx-auto px-4 py-16 text-center">
-          <div className="w-14 h-14 rounded-lg bg-primary-600 text-white flex items-center justify-center text-2xl font-bold mx-auto mb-6">
-            P
-          </div>
-          <h1 className="text-3xl sm:text-4xl font-semibold text-neutral-900">
-            Find your next role, or your next hire
+      <section className="border-b border-line bg-surface">
+        <div className="mx-auto max-w-5xl px-4 py-16 sm:py-20">
+          <p className="text-sm font-bold uppercase tracking-[0.16em] text-action">Career desk</p>
+          <h1 className="mt-2 max-w-3xl text-4xl font-extrabold tracking-[-0.04em] text-ink sm:text-5xl">
+            Make the next career move with the facts in view.
           </h1>
-          <p className="text-neutral-600 mt-3">
-            Pursuit connects job seekers and employers on one platform.
+          <p className="mt-4 max-w-2xl text-lg leading-7 text-muted">
+            Search active roles, inspect the full brief, and keep every application in one working record.
           </p>
 
           <form
             onSubmit={handleSearch}
-            className="mt-8 flex flex-col sm:flex-row gap-3 sm:items-end text-left"
+            className="mt-8 flex flex-col gap-3 text-left sm:flex-row sm:items-end"
           >
             <div className="flex-1">
               <Input
@@ -72,7 +70,7 @@ function HomePage() {
                 onChange={(e) => setLocation(e.target.value)}
               />
             </div>
-            <Button type="submit">Search Jobs</Button>
+            <Button type="submit">Search jobs</Button>
           </form>
 
           {statsData && (
@@ -107,13 +105,13 @@ function HomePage() {
       )}
 
       {/* Employer CTA */}
-      <section className="bg-primary-600">
+      <section className="border-t border-line bg-ink">
         <div className="max-w-3xl mx-auto px-4 py-12 text-center">
-          <h2 className="text-2xl font-semibold text-white">Hiring?</h2>
-          <p className="text-primary-100 mt-2">
-            Post a job and start receiving applications right away.
+          <h2 className="text-2xl font-extrabold text-white">Hiring with a clear brief?</h2>
+          <p className="mt-2 text-neutral-300">
+            Publish the role, manage its status, and review candidates from one desk.
           </p>
-          <Link to="/jobs/new">
+          <Link to="/employer/jobs/new">
             <Button variant="secondary" size="lg" className="mt-6">
               Post a Job
             </Button>

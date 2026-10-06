@@ -28,9 +28,9 @@ beforeEach(() => {
 
 describe('ApplicationReviewPage', () => {
   it('loads a paged list and marks the selected candidate', async () => {
-    renderPage('/employer/jobs/job-1/applications/app-1')
     api.fetchApplication.mockResolvedValue(application)
-    expect(await screen.findByText('Asha')).toBeInTheDocument()
+    renderPage('/employer/jobs/job-1/applications/app-1')
+    expect((await screen.findAllByText('Asha')).length).toBeGreaterThan(0)
     expect(screen.getByRole('link', { name: /asha/i })).toHaveAttribute('aria-current', 'true')
     expect(api.fetchApplicationsByJob).toHaveBeenCalledWith('job-1', 1, 10)
   })

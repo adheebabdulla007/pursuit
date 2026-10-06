@@ -1,5 +1,5 @@
 import { Routes, Route } from 'react-router-dom'
-import Navbar from './components/Navbar'
+import { AppShell } from './components/layout/AppShell'
 import HomePage from './pages/HomePage'
 import JobsPage from './pages/JobsPage'
 import LoginPage from './pages/LoginPage'
@@ -13,8 +13,7 @@ import ProtectedRoute from './context/ProtectedRoute'
 
 function App() {
   return (
-    <>
-      <Navbar />
+    <AppShell>
       <Routes>
         <Route path="/" element={<HomePage />} />
         <Route path="/jobs" element={<JobsPage />} />
@@ -43,7 +42,7 @@ function App() {
         <Route path="/login" element={<LoginPage />} />
         <Route path="/register" element={<RegisterPage />} />
       </Routes>
-    </>
+    </AppShell>
   )
 }
 
