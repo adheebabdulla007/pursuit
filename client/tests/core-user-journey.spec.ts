@@ -118,7 +118,7 @@ test('mobile navigation, filters, focus, and detail layout remain usable', async
   await expect(page.getByRole('button', { name: 'Open navigation' })).toBeFocused()
   await page.getByRole('button', { name: 'Filters' }).click()
   await expect(page.getByRole('dialog', { name: 'Filter jobs' })).toBeVisible()
-  await page.getByRole('button', { name: 'Done' }).click()
+  await page.getByRole('button', { name: 'Apply filters' }).click()
   const overflow = await page.evaluate('document.documentElement.scrollWidth - document.documentElement.clientWidth')
   expect(overflow).toBeLessThanOrEqual(1)
   const firstJob = page.locator('a[href^="/jobs/"]').filter({ visible: true }).first()
