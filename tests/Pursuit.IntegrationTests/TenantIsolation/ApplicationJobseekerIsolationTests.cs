@@ -90,6 +90,7 @@ public class ApplicationJobseekerIsolationTests
     [InlineData(0, 10)]
     [InlineData(1, 0)]
     [InlineData(1, 51)]
+    [InlineData(int.MaxValue, 50)]
     public async Task GetMyApplications_WithInvalidPagination_ReturnsBadRequest(int page, int pageSize)
     {
         var token = await SeedSeekerAsync();

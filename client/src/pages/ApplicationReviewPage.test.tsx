@@ -43,6 +43,20 @@ describe('ApplicationReviewPage', () => {
     expect(api.fetchApplication).toHaveBeenCalledWith('app-99')
   })
 
+  it('resets the status selection when a different candidate is opened', async () => {
+    const second = { ...application, id: 'app-2', applicantName: 'Bea Candidate' }
+    api.fetchApplicationsByJob.mockResolvedValue({ items: [application, second], totalCount: 2, page: 1, pageSize: 10 })
+    api.fetchApplication.mockImplementation((id: string) => Promise.resolve(id === 'app-2' ? second : application))
+    renderPage('/employer/jobs/job-1/applications/app-1')
+
+    expect((await screen.findAllByRole('heading', { name: 'Asha' })).length).toBeGreaterThan(0)
+    await userEvent.selectOptions(screen.getByLabelText('Application status'), 'Reviewed')
+    await userEvent.click(screen.getByRole('link', { name: /bea candidate/i }))
+
+    expect((await screen.findAllByRole('heading', { name: 'Bea Candidate' })).length).toBeGreaterThan(0)
+    expect(screen.getByLabelText('Application status')).toHaveValue('Applied')
+  })
+
   it('shows list error, retry, and empty states', async () => {
     api.fetchApplicationsByJob.mockRejectedValueOnce(new Error('Load failed')).mockResolvedValueOnce({ items: [], totalCount: 0, page: 1, pageSize: 10 })
     renderPage()

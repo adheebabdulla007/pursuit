@@ -49,6 +49,7 @@ public class EmployerJobsTests
     [InlineData(0, 10)]
     [InlineData(1, 0)]
     [InlineData(1, 51)]
+    [InlineData(int.MaxValue, 50)]
     public async Task Mine_WithInvalidPagination_ReturnsBadRequest(int page, int pageSize)
     {
         var token = await SeedUserAsync(UserRole.Employer);

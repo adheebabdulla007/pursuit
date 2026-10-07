@@ -6,16 +6,20 @@ type JobCardProps = {
   title: string
   companyName: string
   location: string
+  jobType: string
+  salaryMin: number
+  salaryMax: number
+  createdAt: string
   search?: string
   selected?: boolean
 }
 
-function JobCard({ id, title, companyName, location, search = '', selected = false }: JobCardProps) {
+function JobCard({ id, title, companyName, location, jobType, salaryMin, salaryMax, createdAt, search = '', selected = false }: JobCardProps) {
   return (
     <Link
       to={`/jobs/${id}${search}`}
       aria-current={selected ? 'page' : undefined}
-      className="group block focus-visible:outline-none"
+      className="group block rounded-md focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-info focus-visible:ring-offset-2 focus-visible:ring-offset-canvas"
     >
       <Card
         padding="sm"
@@ -28,8 +32,9 @@ function JobCard({ id, title, companyName, location, search = '', selected = fal
           {selected && <span className="text-xs font-semibold text-action">Selected</span>}
         </div>
         <p className="mt-1 text-sm font-medium text-neutral-700">{companyName}</p>
-        <p className="mt-1 text-sm text-muted">
-          {location}
+        <p className="mt-1 text-sm text-muted">{location} · {jobType.replace(/([a-z])([A-Z])/g, '$1 $2')}</p>
+        <p className="mt-2 text-xs text-muted tabular-nums">
+          {salaryMin.toLocaleString()} – {salaryMax.toLocaleString()} · Posted {new Intl.DateTimeFormat('en', { month: 'short', day: 'numeric', year: 'numeric' }).format(new Date(createdAt))}
         </p>
       </Card>
     </Link>

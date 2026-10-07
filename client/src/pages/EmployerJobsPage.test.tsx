@@ -90,4 +90,25 @@ describe('EmployerJobsPage', () => {
     expect(await screen.findByText('Could not close job')).toBeInTheDocument()
     expect(document.querySelector('[data-status="open"]')).toHaveTextContent('Open')
   })
+
+  it('returns to the last valid page when closing its only row', async () => {
+    api.fetchMyJobs
+      .mockResolvedValueOnce({ items: [job], totalCount: 1, page: 1, pageSize: 10 })
+      .mockResolvedValueOnce({ items: [job], totalCount: 11, page: 1, pageSize: 10 })
+      .mockResolvedValueOnce({ items: [{ ...job, id: 'job-11' }], totalCount: 11, page: 2, pageSize: 10 })
+      .mockResolvedValueOnce({ items: [job], totalCount: 10, page: 1, pageSize: 10 })
+    api.updateJob.mockResolvedValue({ ...job, id: 'job-11', isActive: false })
+
+    renderPage()
+    await screen.findByText('Platform Engineer')
+    await userEvent.click(screen.getByRole('button', { name: 'Open' }))
+    await waitFor(() => expect(api.fetchMyJobs).toHaveBeenLastCalledWith({ isActive: true, page: 1, pageSize: 10 }))
+    await userEvent.click(screen.getByRole('button', { name: /next/i }))
+    await waitFor(() => expect(api.fetchMyJobs).toHaveBeenLastCalledWith({ isActive: true, page: 2, pageSize: 10 }))
+    await userEvent.click(screen.getByRole('button', { name: /close platform engineer/i }))
+    await userEvent.click(screen.getByRole('button', { name: 'Close job' }))
+
+    await waitFor(() => expect(api.fetchMyJobs).toHaveBeenLastCalledWith({ isActive: true, page: 1, pageSize: 10 }))
+    expect(await screen.findByText('Platform Engineer')).toBeInTheDocument()
+  })
 })

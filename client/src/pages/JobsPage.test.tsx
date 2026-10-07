@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest'
-import { render, screen, within } from '@testing-library/react'
+import { render, screen, waitFor, within } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { MemoryRouter, Routes, Route, useNavigate } from 'react-router-dom'
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
@@ -134,9 +134,10 @@ describe('JobsPage', () => {
   })
 
   it('opens filters as a keyboard-dismissable mobile dialog', async () => {
-    vi.stubGlobal('fetch', vi.fn().mockResolvedValue(
+    const fetchMock = vi.fn().mockResolvedValue(
       jsonResponse({ items: [makeJob()], totalCount: 1, page: 1, pageSize: 10 })
-    ))
+    )
+    vi.stubGlobal('fetch', fetchMock)
     const user = userEvent.setup()
     renderJobsPage()
     await screen.findByText('Backend Engineer')
@@ -144,7 +145,19 @@ describe('JobsPage', () => {
     const trigger = screen.getByRole('button', { name: 'Filters' })
     await user.click(trigger)
     const dialog = screen.getByRole('dialog', { name: 'Filter jobs' })
-    expect(within(dialog).getByLabelText('Job Type')).toBeInTheDocument()
+    const mobileJobType = within(dialog).getByLabelText('Job Type')
+    expect(mobileJobType).toBeInTheDocument()
+    const requestsBeforeDraftChange = fetchMock.mock.calls.length
+    await user.selectOptions(mobileJobType, 'Remote')
+    expect(fetchMock).toHaveBeenCalledTimes(requestsBeforeDraftChange)
+    await user.click(within(dialog).getByRole('button', { name: 'Apply filters' }))
+    await waitFor(() => expect((fetchMock.mock.calls.at(-1)?.[0] as string)).toContain('jobType=Remote'))
+
+    await user.click(trigger)
+    await user.click(within(screen.getByRole('dialog', { name: 'Filter jobs' })).getByRole('button', { name: 'Clear' }))
+    await waitFor(() => expect((fetchMock.mock.calls.at(-1)?.[0] as string)).not.toContain('jobType='))
+
+    await user.click(trigger)
     await user.keyboard('{Escape}')
     expect(screen.queryByRole('dialog', { name: 'Filter jobs' })).not.toBeInTheDocument()
     expect(trigger).toHaveFocus()

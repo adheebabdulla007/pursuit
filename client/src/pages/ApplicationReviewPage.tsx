@@ -24,7 +24,7 @@ export default function ApplicationReviewPage() {
     <header className="mt-5 border-b border-line pb-5"><p className="text-sm font-bold uppercase tracking-[0.16em] text-action">Employer desk</p><h1 className="mt-1 text-3xl font-extrabold text-ink">Application review</h1></header>
     <div className="mt-6 grid gap-5 lg:grid-cols-[340px_minmax(0,1fr)]">
       <section aria-label="Candidates">{list.isLoading && <Skeleton className="h-72" />}{list.error && <Alert variant="danger"><p>{list.error.message}</p><Button className="mt-3" size="sm" variant="secondary" onClick={() => void list.refetch()}>Try again</Button></Alert>}{list.data?.items.length === 0 && <EmptyState icon={<Users />} title="No candidates yet" description="Applications will appear here when candidates apply." />}{list.data && <><ApplicationList applications={list.data.items} jobId={jobId} selectedId={applicationId} /><div className="mt-4"><Pagination page={page} totalPages={totalPages} onPageChange={setPage} /></div></>}</section>
-      <Card>{applicationId ? <>{detail.isLoading && <Skeleton className="h-72" />}{detail.error && <Alert variant="danger">{detail.error.message}</Alert>}{detail.data && <ApplicationDetail application={detail.data} />}</> : <EmptyState title="Select a candidate" description="Open a candidate to review their resume and update their status." />}</Card>
+      <Card>{applicationId ? <>{detail.isLoading && <Skeleton className="h-72" />}{detail.error && <Alert variant="danger">{detail.error.message}</Alert>}{detail.data && <ApplicationDetail key={detail.data.id} application={detail.data} />}</> : <EmptyState title="Select a candidate" description="Open a candidate to review their resume and update their status." />}</Card>
     </div>
   </div></div>
 }

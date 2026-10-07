@@ -35,6 +35,7 @@ export default function EmployerJobsPage() {
   const mutation = useMutation({
     mutationFn: (job: Job) => updateJob(job.id, statusPayload(job)),
     onSuccess: async () => {
+      if (filter !== 'all' && query.data?.items.length === 1 && page > 1) setPage(page - 1)
       await Promise.all([
         queryClient.invalidateQueries({ queryKey: ['employer', 'jobs'] }),
         queryClient.invalidateQueries({ queryKey: ['jobs'] }),
@@ -92,6 +93,7 @@ export default function EmployerJobsPage() {
                     <StatusBadge status={job.isActive ? 'Open' : 'Closed'} />
                   </div>
                   <p className="mt-1 text-sm text-muted">{job.location} · {job.jobType}</p>
+                  <p className="mt-1 text-xs text-muted tabular-nums">Posted {new Intl.DateTimeFormat('en', { month: 'short', day: 'numeric', year: 'numeric' }).format(new Date(job.createdAt))}</p>
                 </div>
                 <div className="flex flex-wrap gap-2">
                   <Link to={`/employer/jobs/${job.id}/applications`} className="inline-flex h-8 items-center rounded-md border border-line bg-surface px-3 text-sm font-semibold text-ink hover:bg-canvas">Applications</Link>

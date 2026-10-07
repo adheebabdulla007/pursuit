@@ -101,6 +101,8 @@ describe('AdminPage', () => {
     const user = userEvent.setup()
 
     await user.click((await screen.findAllByRole('button', { name: 'Deactivate' }))[0])
+    expect(screen.getByRole('alertdialog', { name: 'Deactivate Ada Lovelace?' })).toBeInTheDocument()
+    await user.click(screen.getByRole('button', { name: 'Confirm deactivation' }))
 
     expect((await screen.findAllByRole('button', { name: 'Activate' })).length).toBeGreaterThan(0)
     expect(screen.getAllByText('Inactive').length).toBeGreaterThan(0)
@@ -118,6 +120,7 @@ describe('AdminPage', () => {
     const user = userEvent.setup()
 
     await user.click((await screen.findAllByRole('button', { name: 'Deactivate' }))[0])
+    await user.click(screen.getByRole('button', { name: 'Confirm deactivation' }))
 
     expect(await screen.findByText('Cannot deactivate yourself')).toBeInTheDocument()
     expect(screen.getAllByRole('button', { name: 'Deactivate' }).length).toBeGreaterThan(0)

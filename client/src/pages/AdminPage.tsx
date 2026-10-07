@@ -4,8 +4,38 @@ import { fetchUsers, fetchStats, updateUserStatus } from '../api/admin'
 import { Card } from '../components/ui/Card'
 import { Button } from '../components/ui/Button'
 import { StatusBadge } from '../components/ui/StatusBadge'
+import { ConfirmationDialog } from '../components/ui/ConfirmationDialog'
+import type { AdminUser } from '../types/admin'
 
 const PAGE_SIZE = 10
+
+function AccountStatusAction({ user, pending, onToggle }: { user: AdminUser; pending: boolean; onToggle: () => Promise<void> }) {
+  const button = (
+    <Button
+      className="mt-4 md:mt-0"
+      variant={user.isActive ? 'destructive' : 'secondary'}
+      size="sm"
+      onClick={user.isActive ? undefined : () => void onToggle()}
+      disabled={pending}
+    >
+      {pending ? 'Updating...' : user.isActive ? 'Deactivate' : 'Activate'}
+    </Button>
+  )
+
+  if (!user.isActive) return button
+
+  return (
+    <ConfirmationDialog
+      trigger={button}
+      title={`Deactivate ${user.firstName} ${user.lastName}?`}
+      description="This account will lose access until an administrator activates it again."
+      confirmLabel="Confirm deactivation"
+      variant="danger"
+      pending={pending}
+      onConfirm={onToggle}
+    />
+  )
+}
 
 function AdminPage() {
   const [page, setPage] = useState(1)
@@ -89,7 +119,7 @@ function AdminPage() {
           {usersQuery.data && (
             <>
               <div className="space-y-3 md:hidden">
-                {usersQuery.data.items.map((u) => <Card key={u.id} padding="sm"><div className="flex items-start justify-between gap-3"><div><h3 className="font-bold text-ink">{u.firstName} {u.lastName}</h3><p className="text-sm text-muted">{u.email}</p></div><StatusBadge status={u.isActive ? 'Active' : 'Inactive'} /></div><dl className="mt-4 grid grid-cols-2 gap-3 text-sm"><div><dt className="text-muted">Role</dt><dd className="font-semibold text-ink">{u.role}</dd></div><div><dt className="text-muted">Joined</dt><dd className="font-semibold text-ink">{new Date(u.createdAt).toLocaleDateString()}</dd></div></dl><Button className="mt-4" variant={u.isActive ? 'destructive' : 'secondary'} size="sm" onClick={() => handleToggleStatus(u.id, u.isActive)} disabled={pendingUserId === u.id}>{pendingUserId === u.id ? 'Updating...' : u.isActive ? 'Deactivate' : 'Activate'}</Button></Card>)}
+                {usersQuery.data.items.map((u) => <Card key={u.id} padding="sm"><div className="flex items-start justify-between gap-3"><div><h3 className="font-bold text-ink">{u.firstName} {u.lastName}</h3><p className="text-sm text-muted">{u.email}</p></div><StatusBadge status={u.isActive ? 'Active' : 'Inactive'} /></div><dl className="mt-4 grid grid-cols-2 gap-3 text-sm"><div><dt className="text-muted">Role</dt><dd className="font-semibold text-ink">{u.role}</dd></div><div><dt className="text-muted">Joined</dt><dd className="font-semibold text-ink">{new Date(u.createdAt).toLocaleDateString()}</dd></div></dl><AccountStatusAction user={u} pending={pendingUserId === u.id} onToggle={() => handleToggleStatus(u.id, u.isActive)} /></Card>)}
               </div>
               <Card padding="none" className="hidden overflow-x-auto md:block">
                 <table className="w-full text-sm">
@@ -126,18 +156,7 @@ function AdminPage() {
                           {new Date(u.createdAt).toLocaleDateString()}
                         </td>
                         <td className="px-4 py-3 text-right">
-                          <Button
-                            variant={u.isActive ? 'destructive' : 'secondary'}
-                            size="sm"
-                            onClick={() => handleToggleStatus(u.id, u.isActive)}
-                            disabled={pendingUserId === u.id}
-                          >
-                            {pendingUserId === u.id
-                              ? 'Updating...'
-                              : u.isActive
-                                ? 'Deactivate'
-                                : 'Activate'}
-                          </Button>
+                          <AccountStatusAction user={u} pending={pendingUserId === u.id} onToggle={() => handleToggleStatus(u.id, u.isActive)} />
                         </td>
                       </tr>
                     ))}

@@ -22,6 +22,7 @@ public class UserService : IUserService
 
     public async Task<PagedResult<UserDto>> GetAllUsersAsync(int page, int pageSize, CancellationToken cancellationToken = default)
     {
+        Common.PaginationPolicy.EnsureValid(page, pageSize);
         var users = await _userRepository.GetPagedAsync(page, pageSize, cancellationToken);
         var total = await _userRepository.CountAsync(cancellationToken);
 

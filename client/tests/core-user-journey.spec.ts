@@ -105,6 +105,7 @@ test('complete hiring workflow crosses every role and preserves status', async (
     ? accountEmail.locator('xpath=ancestor::div[contains(@class,"rounded-lg")][1]')
     : accountEmail.locator('xpath=ancestor::tr[1]')
   await account.getByRole('button', { name: 'Deactivate' }).click()
+  await page.getByRole('button', { name: 'Confirm deactivation' }).click()
   await expect(account.getByRole('button', { name: 'Activate' })).toBeVisible()
 })
 

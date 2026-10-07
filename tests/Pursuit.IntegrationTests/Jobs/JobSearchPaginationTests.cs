@@ -29,6 +29,7 @@ public class JobSearchPaginationTests
     [InlineData(0, 10)]
     [InlineData(1, 0)]
     [InlineData(1, 51)]
+    [InlineData(int.MaxValue, 50)]
     public async Task Search_WithInvalidPagination_ReturnsBadRequest(int page, int pageSize)
     {
         using var client = _factory.CreateClient();

@@ -1,5 +1,6 @@
 import * as Dialog from '@radix-ui/react-dialog'
 import { SlidersHorizontal, X } from 'lucide-react'
+import { useState } from 'react'
 import type { JobType } from '../../types/job'
 import { Button } from '../ui/Button'
 
@@ -30,6 +31,25 @@ export function JobFilters({
   onRemove,
   onClear,
 }: JobFiltersProps) {
+  const [mobileOpen, setMobileOpen] = useState(false)
+  const [draftJobType, setDraftJobType] = useState<JobType | ''>(jobType)
+
+  function handleMobileOpenChange(nextOpen: boolean) {
+    if (nextOpen) setDraftJobType(jobType)
+    setMobileOpen(nextOpen)
+  }
+
+  function applyMobileFilters() {
+    onJobTypeChange(draftJobType)
+    setMobileOpen(false)
+  }
+
+  function clearMobileFilters() {
+    onClear()
+    setDraftJobType('')
+    setMobileOpen(false)
+  }
+
   const activeFilters = [
     keyword ? { key: 'keyword' as const, label: 'Keyword', value: keyword } : null,
     location ? { key: 'location' as const, label: 'Location', value: location } : null,
@@ -55,7 +75,7 @@ export function JobFilters({
         </select>
       </div>
 
-      <Dialog.Root>
+      <Dialog.Root open={mobileOpen} onOpenChange={handleMobileOpenChange}>
         <Dialog.Trigger asChild>
           <Button type="button" variant="secondary" size="sm" className="sm:hidden">
             <SlidersHorizontal aria-hidden="true" size={16} /> Filters
@@ -71,15 +91,16 @@ export function JobFilters({
             <label htmlFor="jobType-mobile" className="mt-5 block text-sm font-semibold">Job Type</label>
             <select
               id="jobType-mobile"
-              value={jobType}
-              onChange={(event) => onJobTypeChange(event.target.value as JobType | '')}
+              value={draftJobType}
+              onChange={(event) => setDraftJobType(event.target.value as JobType | '')}
               className="mt-2 h-11 w-full rounded-md border border-line bg-surface px-3 text-ink focus:ring-2 focus:ring-info"
             >
               <option value="">All job types</option>
               {jobTypeOptions}
             </select>
-            <div className="mt-5 flex justify-end">
-              <Dialog.Close asChild><Button type="button">Done</Button></Dialog.Close>
+            <div className="mt-5 flex justify-end gap-2">
+              <Button type="button" variant="ghost" onClick={clearMobileFilters}>Clear</Button>
+              <Button type="button" onClick={applyMobileFilters}>Apply filters</Button>
             </div>
             <Dialog.Close asChild>
               <button type="button" aria-label="Close filters" className="absolute right-4 top-4 rounded p-1 text-muted hover:text-ink">

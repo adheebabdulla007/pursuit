@@ -15,6 +15,10 @@ export function JobResultItem({ job, selected, search }: JobResultItemProps) {
         title={job.title}
         companyName={job.companyName}
         location={job.location}
+        jobType={job.jobType}
+        salaryMin={job.salaryMin}
+        salaryMax={job.salaryMax}
+        createdAt={job.createdAt}
         selected={selected}
         search={search}
       />

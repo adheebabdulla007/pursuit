@@ -98,6 +98,10 @@ function HomePage() {
                 title={job.title}
                 companyName={job.companyName}
                 location={job.location}
+                jobType={job.jobType}
+                salaryMin={job.salaryMin}
+                salaryMax={job.salaryMax}
+                createdAt={job.createdAt}
               />
             ))}
           </div>
@@ -111,10 +115,8 @@ function HomePage() {
           <p className="mt-2 text-neutral-300">
             Publish the role, manage its status, and review candidates from one desk.
           </p>
-          <Link to="/employer/jobs/new">
-            <Button variant="secondary" size="lg" className="mt-6">
-              Post a Job
-            </Button>
+          <Link to="/employer/jobs/new" className="mt-6 inline-flex h-12 items-center justify-center rounded-md border border-line bg-surface px-6 text-lg font-semibold text-ink transition-colors hover:bg-canvas focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-info focus-visible:ring-offset-2 focus-visible:ring-offset-ink">
+            Post a Job
           </Link>
         </div>
       </section>

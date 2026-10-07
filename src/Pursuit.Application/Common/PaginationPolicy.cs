@@ -16,5 +16,8 @@ public static class PaginationPolicy
                 $"Page size must be between 1 and {MaxPageSize}.",
                 nameof(pageSize));
         }
+
+        if ((long)(page - 1) * pageSize > int.MaxValue)
+            throw new ArgumentException("The requested page is too large.", nameof(page));
     }
 }

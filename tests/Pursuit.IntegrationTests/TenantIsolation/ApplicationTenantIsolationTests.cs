@@ -105,6 +105,7 @@ public class ApplicationTenantIsolationTests
     [InlineData(0, 10)]
     [InlineData(1, 0)]
     [InlineData(1, 51)]
+    [InlineData(int.MaxValue, 50)]
     public async Task GetByJob_WithInvalidPagination_ReturnsBadRequest(int page, int pageSize)
     {
         var (token, jobId) = await SeedEmployerAndJobAsync();
