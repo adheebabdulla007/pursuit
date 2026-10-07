@@ -11,8 +11,15 @@ function renderShell(role: 'Employer' | 'JobSeeker' | 'Admin' = 'Employer') {
 }
 
 describe('AppShell', () => {
-  it('renders the skip target and employer navigation', async () => {
-    renderShell('Employer'); expect(screen.getByRole('link', { name: /skip to main/i })).toHaveAttribute('href', '#main-content'); expect(screen.getAllByRole('link', { name: 'My jobs' }).length).toBeGreaterThan(0); await waitFor(() => expect(document.getElementById('main-content')).toHaveFocus())
+  it('keeps the skip link first on initial load and focuses main after route navigation', async () => {
+    renderShell('Employer')
+    const user = userEvent.setup()
+    const skipLink = screen.getByRole('link', { name: /skip to main/i })
+    expect(skipLink).toHaveAttribute('href', '#main-content')
+    await user.tab()
+    expect(skipLink).toHaveFocus()
+    await user.click(screen.getAllByRole('link', { name: 'My jobs' })[0])
+    await waitFor(() => expect(document.getElementById('main-content')).toHaveFocus())
   })
   it('renders role-specific destinations', () => {
     renderShell('JobSeeker'); expect(screen.getAllByRole('link', { name: 'My applications' }).length).toBeGreaterThan(0)
