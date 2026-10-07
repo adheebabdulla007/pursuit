@@ -30,7 +30,7 @@ export function JobResultsList({
 }: JobResultsListProps) {
   if (isLoading) {
     return (
-      <div data-testid="job-list-skeleton" aria-label="Loading jobs" className="space-y-3">
+      <div data-testid="job-list-skeleton" role="status" aria-label="Loading jobs" className="space-y-3">
         {[1, 2, 3].map((item) => <Skeleton key={item} className="h-32 w-full" />)}
       </div>
     )

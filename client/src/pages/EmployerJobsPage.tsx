@@ -50,7 +50,7 @@ export default function EmployerJobsPage() {
   }
 
   return (
-    <main className="min-h-screen bg-canvas px-4 py-8 sm:px-6 lg:px-8">
+    <div className="min-h-screen bg-canvas px-4 py-8 sm:px-6 lg:px-8">
       <div className="mx-auto max-w-6xl">
         <header className="flex flex-col gap-4 border-b border-line pb-6 sm:flex-row sm:items-end sm:justify-between">
           <div>
@@ -112,6 +112,6 @@ export default function EmployerJobsPage() {
           </div>
         )}
       </div>
-    </main>
+    </div>
   )
 }

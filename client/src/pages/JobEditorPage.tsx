@@ -29,7 +29,7 @@ export default function JobEditorPage() {
   })
 
   return (
-    <main className="min-h-screen bg-canvas px-4 py-8 sm:px-6 lg:px-8">
+    <div className="min-h-screen bg-canvas px-4 py-8 sm:px-6 lg:px-8">
       <div className="mx-auto max-w-3xl">
         <Link to="/employer/jobs" className="inline-flex items-center gap-2 text-sm font-semibold text-ink hover:text-action"><ArrowLeft size={16} aria-hidden="true" /> My jobs</Link>
         <header className="mt-5 border-b border-line pb-5">
@@ -54,6 +54,6 @@ export default function JobEditorPage() {
           </Card>
         )}
       </div>
-    </main>
+    </div>
   )
 }

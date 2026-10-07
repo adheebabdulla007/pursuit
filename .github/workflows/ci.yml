@@ -89,6 +89,9 @@ jobs:
       RabbitMqSettings__Password: "pursuit_e2e_pass"
       AzureBlobSettings__ConnectionString: "DefaultEndpointsProtocol=http;AccountName=devstoreaccount1;AccountKey=Eby8vdM02xNOcqFlqUwJPLlmEtlCDXJ1OUzFT50uSRZ6IFsuFq2UVErCz4I6tq/K1SZFPTOtr/KBHBeksoGMGw==;BlobEndpoint=http://localhost:10001/devstoreaccount1;"
       AzureBlobSettings__ContainerName: "resumes"
+      AdminBootstrapSettings__Enabled: "true"
+      AdminBootstrapSettings__Email: "admin.e2e@pursuit.test"
+      AdminBootstrapSettings__Password: "PursuitE2EAdmin1!"
 
     steps:
       - name: Check out repository
