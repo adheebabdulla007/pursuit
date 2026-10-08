@@ -49,7 +49,7 @@ services:
       dockerfile: Dockerfile
     entrypoint: ["/app/migrations/efbundle"]
     environment:
-      ConnectionStrings__DefaultConnection: "Server=sqlserver-e2e,1433;Database=PursuitE2E;User Id=sa;Password=${SA_PASSWORD};TrustServerCertificate=True;"
+      ConnectionStrings__DefaultConnection: "Server=sqlserver-e2e,1433;Database=PursuitDb;User Id=sa;Password=${SA_PASSWORD};TrustServerCertificate=True;"
     depends_on:
       sqlserver-e2e:
         condition: service_healthy

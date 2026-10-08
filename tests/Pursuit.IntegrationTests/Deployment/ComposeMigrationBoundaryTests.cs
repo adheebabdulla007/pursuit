@@ -6,12 +6,13 @@ namespace Pursuit.IntegrationTests.Deployment;
 public sealed class ComposeMigrationBoundaryTests
 {
     [Theory]
-    [InlineData("docker-compose.yml", "migrate", "sqlserver")]
-    [InlineData("docker-compose.e2e.yml", "migrate-e2e", "sqlserver-e2e")]
+    [InlineData("docker-compose.yml", "migrate", "sqlserver", "PursuitDb")]
+    [InlineData("docker-compose.e2e.yml", "migrate-e2e", "sqlserver-e2e", "PursuitDb")]
     public async Task ResolvedComposeConfig_DefinesOneShotMigrationService(
         string composeFile,
         string migrationService,
-        string sqlService)
+        string sqlService,
+        string databaseName)
     {
         using var config = await ResolveComposeConfigAsync(composeFile);
         var services = config.RootElement.GetProperty("services");
@@ -22,7 +23,9 @@ public sealed class ComposeMigrationBoundaryTests
             "service_healthy",
             migration.GetProperty("depends_on").GetProperty(sqlService).GetProperty("condition").GetString());
         Assert.False(migration.TryGetProperty("ports", out _));
-        Assert.Contains("ConnectionStrings__DefaultConnection", migration.GetProperty("environment").GetRawText());
+        var environment = migration.GetProperty("environment").GetRawText();
+        Assert.Contains("ConnectionStrings__DefaultConnection", environment);
+        Assert.Contains($"Database={databaseName}", environment);
     }
 
     [Fact]
