@@ -41,3 +41,15 @@ services:
     ports:
       - "10001:10000"
     command: azurite-blob --blobHost 0.0.0.0
+
+  migrate-e2e:
+    image: pursuit-api-e2e:${PURSUIT_IMAGE_TAG:-local}
+    build:
+      context: .
+      dockerfile: Dockerfile
+    entrypoint: ["/app/migrations/efbundle"]
+    environment:
+      ConnectionStrings__DefaultConnection: "Server=sqlserver-e2e,1433;Database=PursuitE2E;User Id=sa;Password=${SA_PASSWORD};TrustServerCertificate=True;"
+    depends_on:
+      sqlserver-e2e:
+        condition: service_healthy
