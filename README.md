@@ -48,6 +48,16 @@ Use `docker compose down -v` when you also want to delete the local SQL Server v
 
 If Compose reports that it cannot connect to the Docker API or daemon, start Docker Desktop or the Docker service and rerun `docker info` before trying again.
 
+### Run the API in Visual Studio and the client in Vite
+
+The Development API uses local SQL Server Express and expects Redis, RabbitMQ, and Azurite on ports 6379, 5672, and 10000. From the repository root, start those services before launching the API:
+
+```text
+docker compose up -d --wait redis rabbitmq azurite
+```
+
+Run the `http` profile of `Pursuit.API` in Visual Studio, or use `dotnet run --project src/Pursuit.API`. In `client`, run `npm run dev`. The client environment file must point `VITE_API_BASE_URL` to `http://localhost:5146`. Keep the three dependency containers running while applying to jobs; résumé upload requires Azurite, and job search uses Redis.
+
 ## What works
 
 - Employer and job-seeker registration with role-specific validation

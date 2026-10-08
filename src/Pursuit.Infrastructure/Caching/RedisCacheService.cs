@@ -18,6 +18,9 @@ public sealed class RedisCacheService : ICacheService
 
     public async Task<T?> GetAsync<T>(string key, CancellationToken cancellationToken = default)
     {
+        if (!_connectionMultiplexer.IsConnected)
+            return default;
+
         try
         {
             var db = _connectionMultiplexer.GetDatabase();
@@ -37,6 +40,9 @@ public sealed class RedisCacheService : ICacheService
 
     public async Task SetAsync<T>(string key, T value, TimeSpan ttl, CancellationToken cancellationToken = default)
     {
+        if (!_connectionMultiplexer.IsConnected)
+            return;
+
         try
         {
             var db = _connectionMultiplexer.GetDatabase();
@@ -51,6 +57,9 @@ public sealed class RedisCacheService : ICacheService
 
     public async Task RemoveAsync(string key, CancellationToken cancellationToken = default)
     {
+        if (!_connectionMultiplexer.IsConnected)
+            return;
+
         try
         {
             var db = _connectionMultiplexer.GetDatabase();
@@ -64,6 +73,9 @@ public sealed class RedisCacheService : ICacheService
 
     public async Task RemoveByPrefixAsync(string prefix, CancellationToken cancellationToken = default)
     {
+        if (!_connectionMultiplexer.IsConnected)
+            return;
+
         try
         {
             var server = _connectionMultiplexer.GetServer(_connectionMultiplexer.GetEndPoints().First());

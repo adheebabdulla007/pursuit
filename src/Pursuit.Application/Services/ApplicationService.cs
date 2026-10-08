@@ -35,22 +35,19 @@ public class ApplicationService : IApplicationService
         _logger = logger;
     }
 
+    public async Task EnsureCanApplyAsync(
+        Guid jobId,
+        CancellationToken cancellationToken = default)
+    {
+        await GetEligibleJobAsync(jobId, cancellationToken);
+    }
+
     public async Task<ApplicationDto> ApplyAsync(
         CreateApplicationDto dto,
         CancellationToken cancellationToken = default)
     {
-        var job = await _jobRepository.GetByIdAsync(dto.JobId, cancellationToken)
-            ?? throw new KeyNotFoundException($"Job with ID {dto.JobId} was not found.");
-
-        if (!job.IsActive)
-            throw new InvalidOperationException("This job is no longer accepting applications.");
-
+        var job = await GetEligibleJobAsync(dto.JobId, cancellationToken);
         var applicantId = _currentUserService.UserId;
-
-        var alreadyApplied = await _applicationRepository.ExistsAsync(dto.JobId, applicantId, cancellationToken);
-
-        if (alreadyApplied)
-            throw new InvalidOperationException("You have already applied to this job.");
 
         var application = new Domain.Entities.Application
         {
@@ -67,6 +64,23 @@ public class ApplicationService : IApplicationService
         await PublishApplicationSubmittedAsync(application.Id, applicantId, job, cancellationToken);
 
         return MapToDto(application, job, null);
+    }
+
+    private async Task<Job> GetEligibleJobAsync(
+        Guid jobId,
+        CancellationToken cancellationToken)
+    {
+        var job = await _jobRepository.GetByIdAsync(jobId, cancellationToken)
+            ?? throw new KeyNotFoundException($"Job with ID {jobId} was not found.");
+
+        if (!job.IsActive)
+            throw new InvalidOperationException("This job is no longer accepting applications.");
+
+        if (await _applicationRepository.ExistsAsync(
+                jobId, _currentUserService.UserId, cancellationToken))
+            throw new InvalidOperationException("You have already applied to this job.");
+
+        return job;
     }
 
     private async Task PublishApplicationSubmittedAsync(

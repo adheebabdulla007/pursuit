@@ -62,7 +62,7 @@ Evidence required:
 
 ## 5. Readiness and shutdown
 
-Keep a lightweight liveness endpoint and add readiness checks for SQL Server, Redis, RabbitMQ, and Blob Storage. Fix the RabbitMQ channel shutdown path so normal host disposal does not produce a fatal log.
+Keep a lightweight liveness endpoint and add readiness checks for SQL Server, Redis, RabbitMQ, and Blob Storage. The RabbitMQ consumer now tolerates an already-disposed recovery channel during host shutdown; keep clean shutdown behavior covered by the integration suite.
 
 Evidence required:
 

@@ -127,10 +127,20 @@ public sealed class ApplicationSubmittedConsumer : BackgroundService
     {
         await base.StopAsync(cancellationToken);
 
-        if (_channel is not null)
+        var channel = Interlocked.Exchange(ref _channel, null);
+        if (channel is null)
+            return;
+
+        try
         {
-            await _channel.CloseAsync();
-            await _channel.DisposeAsync();
+            if (channel.IsOpen)
+                await channel.CloseAsync(cancellationToken: cancellationToken);
+
+            await channel.DisposeAsync();
+        }
+        catch (ObjectDisposedException)
+        {
+            // RabbitMQ recovery can dispose the channel while the host is stopping.
         }
     }
 }

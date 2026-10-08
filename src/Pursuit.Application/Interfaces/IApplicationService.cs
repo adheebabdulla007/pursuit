@@ -4,6 +4,10 @@ namespace Pursuit.Application.Interfaces;
 
 public interface IApplicationService
 {
+    Task EnsureCanApplyAsync(
+        Guid jobId,
+        CancellationToken cancellationToken = default);
+
     Task<ApplicationDto> ApplyAsync(
         CreateApplicationDto dto,
         CancellationToken cancellationToken = default);

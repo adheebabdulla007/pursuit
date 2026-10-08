@@ -48,6 +48,8 @@ public sealed class ApplicationsController : ControllerBase
         if (resume.Length > 5 * 1024 * 1024)
             return BadRequest(new ErrorResponse { StatusCode = 400, Message = "File size must not exceed 5MB." });
 
+        await _applicationService.EnsureCanApplyAsync(jobId, cancellationToken);
+
         await using var stream = resume.OpenReadStream();
         var resumeUrl = await _blobStorageService.UploadAsync(
             stream, resume.FileName, resume.ContentType, cancellationToken);
