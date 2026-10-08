@@ -5,6 +5,7 @@ using Testcontainers.MsSql;
 using Testcontainers.RabbitMq;
 using Testcontainers.Redis;
 using Xunit;
+using Pursuit.IntegrationTests.Infrastructure;
 
 namespace Pursuit.IntegrationTests;
 
@@ -38,6 +39,8 @@ public class CustomWebApplicationFactory : WebApplicationFactory<Program>, IAsyn
             _sqlContainer.StartAsync(),
             _redisContainer.StartAsync(),
             _rabbitMqContainer.StartAsync());
+
+        await DatabaseSchemaProvisioner.MigrateAsync(_sqlContainer.GetConnectionString());
 
         Environment.SetEnvironmentVariable("ConnectionStrings__DefaultConnection", _sqlContainer.GetConnectionString());
         Environment.SetEnvironmentVariable("RedisSettings__ConnectionString", _redisContainer.GetConnectionString());

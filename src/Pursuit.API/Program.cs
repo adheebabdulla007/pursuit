@@ -7,7 +7,6 @@ using Pursuit.Infrastructure;
 using Serilog;
 using System.Text;
 using Pursuit.Infrastructure.Persistence;
-using Microsoft.EntityFrameworkCore;
 using Pursuit.Application.Interfaces;
 using Pursuit.Application.Security;
 using Pursuit.Domain.Enums;
@@ -146,12 +145,6 @@ try
     });
 
     var app = builder.Build();
-
-    using (var scope = app.Services.CreateScope())
-    {
-        var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
-        await db.Database.MigrateAsync();
-    }
 
     await AdminSeeder.SeedAsync(app.Services);
 
