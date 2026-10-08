@@ -15,6 +15,7 @@ flowchart TB
     Blob[(Blob Storage)]
     Rabbit[(RabbitMQ)]
     Consumer[Application event consumer]
+    Migration[One-time migration job]
 
     Browser -->|HttpOnly cookies + CSRF header| API
     API --> Auth
@@ -24,6 +25,7 @@ flowchart TB
     App --> Blob
     App --> Rabbit
     Rabbit --> Consumer
+    Migration --> SQL
 ```
 
 This shape keeps deployment and debugging manageable for one developer. The project boundaries still make database, cache, messaging, and file-storage code replaceable without moving each concern into its own service.
@@ -112,15 +114,15 @@ There is one known consistency gap. The SQL insert commits before RabbitMQ publi
 
 ## Startup and deployment
 
-Startup validates required settings before migrations, administrator creation, or hosted consumers run. Production rejects development credentials and insecure SQL or Blob settings. Data Protection keys must live in a shared directory when multiple instances serve browser requests.
+Startup validates required settings before administrator creation or hosted consumers run. Production rejects development credentials and insecure SQL or Blob settings. Data Protection keys must live in a shared directory when multiple instances serve browser requests.
 
-EF Core migrations currently run in API startup. EF Core provides a migration lock, but the application process still needs schema permissions and rollout timing remains coupled to API startup. The planned production path builds a migration bundle in CI and runs it as a one-time deployment job.
+CI builds a Linux EF Core migration bundle and verifies it against empty and current databases. A one-time deployment job runs that bundle before API rollout. The normal API process never calls `MigrateAsync`, so replicas can use a database identity without schema-alteration permissions. A failed migration exits non-zero and blocks dependent API startup in Docker Compose.
 
 ## Failure behavior
 
 | Dependency | Current behavior |
 | --- | --- |
-| SQL Server | Startup migration or request fails; the process cannot serve useful traffic |
+| SQL Server | Migration job blocks rollout; an API request fails if connectivity is lost after deployment |
 | Redis | Cache operations log the error and fall back to SQL |
 | RabbitMQ at startup | Consumer retries with increasing delays |
 | RabbitMQ during publish | Application record may already be committed; transactional outbox is planned |
