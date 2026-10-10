@@ -39,8 +39,10 @@ public sealed class AuthService : IAuthService
         if (!RegistrationRolePolicy.TryParse(dto.Role, out var role))
             throw new ArgumentException("Invalid role. Valid values are Employer, JobSeeker.");
 
-        if (await _userRepository.ExistsByEmailAsync(dto.Email, cancellationToken))
-            throw new InvalidOperationException($"An account with email {dto.Email} already exists.");
+        var email = NormalizeEmail(dto.Email);
+
+        if (await _userRepository.ExistsByEmailAsync(email, cancellationToken))
+            throw new InvalidOperationException($"An account with email {email} already exists.");
 
         Guid? tenantId = null;
 
@@ -71,7 +73,7 @@ public sealed class AuthService : IAuthService
             Id = Guid.NewGuid(),
             FirstName = dto.FirstName,
             LastName = dto.LastName,
-            Email = dto.Email,
+            Email = email,
             PasswordHash = _passwordHasher.Hash(dto.Password),
             Role = role,
             TenantId = tenantId
@@ -84,7 +86,7 @@ public sealed class AuthService : IAuthService
 
     public async Task<AuthResponseDto> LoginAsync(LoginDto dto, CancellationToken cancellationToken = default)
     {
-        var user = await _userRepository.GetByEmailAsync(dto.Email, cancellationToken)
+        var user = await _userRepository.GetByEmailAsync(NormalizeEmail(dto.Email), cancellationToken)
             ?? throw new UnauthorizedAccessException("Invalid email or password.");
 
         if (!_passwordHasher.Verify(dto.Password, user.PasswordHash))
@@ -219,4 +221,6 @@ public sealed class AuthService : IAuthService
             .Replace(".", string.Empty)
             .Replace(",", string.Empty);
     }
+
+    private static string NormalizeEmail(string email) => email.Trim().ToLowerInvariant();
 }

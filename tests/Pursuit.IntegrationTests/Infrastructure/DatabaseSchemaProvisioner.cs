@@ -11,7 +11,7 @@ internal static class DatabaseSchemaProvisioner
         CancellationToken cancellationToken = default)
     {
         var options = new DbContextOptionsBuilder<AppDbContext>()
-            .UseSqlServer(connectionString)
+            .UseNpgsql(connectionString)
             .Options;
 
         await using var context = new AppDbContext(options, new SystemDbContextScope());

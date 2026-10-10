@@ -1,11 +1,13 @@
 using System.Net;
+using FluentAssertions;
 using Microsoft.AspNetCore.Mvc.Testing;
 using Microsoft.AspNetCore.TestHost;
-using Microsoft.Data.SqlClient;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.DependencyInjection.Extensions;
 using Microsoft.Extensions.Hosting;
-using Testcontainers.MsSql;
+using Npgsql;
+using Pursuit.IntegrationTests.Infrastructure;
+using Testcontainers.PostgreSql;
 
 namespace Pursuit.IntegrationTests.Configuration;
 
@@ -15,9 +17,9 @@ public sealed class ApiMigrationBoundaryTests
     [Fact]
     public async Task ApiStartup_WithEmptyDatabaseAndBootstrapDisabled_DoesNotCreateSchema()
     {
-        await using var sql = new MsSqlBuilder("mcr.microsoft.com/mssql/server:2022-latest").Build();
-        await sql.StartAsync();
-        var settings = ProductionLikeSettings(sql.GetConnectionString());
+        await using var postgres = new PostgreSqlBuilder("postgres:17-alpine").Build();
+        await postgres.StartAsync();
+        var settings = ProductionLikeSettings(postgres.GetConnectionString());
         var originals = settings.ToDictionary(
             setting => setting.Key,
             setting => Environment.GetEnvironmentVariable(setting.Key));
@@ -34,10 +36,10 @@ public sealed class ApiMigrationBoundaryTests
             var response = await client.GetAsync("/health");
 
             Assert.Equal(HttpStatusCode.OK, response.StatusCode);
-            await using var connection = new SqlConnection(sql.GetConnectionString());
+            await using var connection = new NpgsqlConnection(postgres.GetConnectionString());
             await connection.OpenAsync();
             await using var command = connection.CreateCommand();
-            command.CommandText = "SELECT OBJECT_ID(N'[__EFMigrationsHistory]')";
+            command.CommandText = "SELECT to_regclass('public.\"__EFMigrationsHistory\"')::text";
             var historyTable = await command.ExecuteScalarAsync();
             Assert.True(historyTable is null or DBNull);
         }
@@ -46,6 +48,23 @@ public sealed class ApiMigrationBoundaryTests
             foreach (var setting in originals)
                 Environment.SetEnvironmentVariable(setting.Key, setting.Value);
         }
+    }
+
+    [Fact]
+    public async Task DatabaseSchemaProvisioner_MigrateTwice_IsIdempotent()
+    {
+        await using var postgres = new PostgreSqlBuilder("postgres:17-alpine").Build();
+        await postgres.StartAsync();
+
+        await DatabaseSchemaProvisioner.MigrateAsync(postgres.GetConnectionString());
+        await DatabaseSchemaProvisioner.MigrateAsync(postgres.GetConnectionString());
+
+        await using var connection = new NpgsqlConnection(postgres.GetConnectionString());
+        await connection.OpenAsync();
+        await using var command = connection.CreateCommand();
+        command.CommandText = "SELECT COUNT(*) FROM \"__EFMigrationsHistory\"";
+        var migrationCount = (long)(await command.ExecuteScalarAsync())!;
+        migrationCount.Should().BeGreaterThan(0);
     }
 
     private static Dictionary<string, string> ProductionLikeSettings(string connectionString) => new()

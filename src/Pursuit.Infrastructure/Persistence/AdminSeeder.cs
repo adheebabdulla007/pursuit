@@ -29,7 +29,10 @@ public static class AdminSeeder
             return;
         }
 
-        await using var transaction = await db.Database.BeginTransactionAsync(IsolationLevel.Serializable);
+        // The transaction-scoped advisory lock serializes bootstrap attempts.
+        // Read committed lets a waiter observe the winner's committed admin row;
+        // a serializable snapshot taken before the wait would be stale instead.
+        await using var transaction = await db.Database.BeginTransactionAsync(IsolationLevel.ReadCommitted);
         await AcquireBootstrapLockAsync(db);
 
         var adminExists = await userRepository.ExistsByRoleAsync(UserRole.Admin);
@@ -68,18 +71,8 @@ public static class AdminSeeder
     {
         await using var command = db.Database.GetDbConnection().CreateCommand();
         command.Transaction = db.Database.CurrentTransaction!.GetDbTransaction();
-        command.CommandText = """
-            DECLARE @result int;
-            EXEC @result = sys.sp_getapplock
-                @Resource = N'Pursuit.AdminBootstrap',
-                @LockMode = N'Exclusive',
-                @LockOwner = N'Transaction',
-                @LockTimeout = 15000;
-            SELECT @result;
-            """;
-
-        var result = Convert.ToInt32(await command.ExecuteScalarAsync());
-        if (result < 0)
-            throw new InvalidOperationException("Could not acquire the administrator bootstrap lock.");
+        command.CommandTimeout = 15;
+        command.CommandText = "SELECT pg_advisory_xact_lock(5784682419472734785);";
+        await command.ExecuteNonQueryAsync();
     }
 }

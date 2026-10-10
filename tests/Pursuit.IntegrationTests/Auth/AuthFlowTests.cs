@@ -57,6 +57,47 @@ public class AuthFlowTests
     }
 
     [Fact]
+    public async Task RegisterAndLogin_EmailCasing_IsNormalizedAndDuplicateIsRejected()
+    {
+        var marker = Guid.NewGuid().ToString("N");
+        var mixedCaseEmail = $"Mixed-{marker}@Example.COM";
+        var normalizedEmail = mixedCaseEmail.Trim().ToLowerInvariant();
+        const string password = "TestPassword123!";
+
+        using var registerClient = _factory.CreateClient();
+        var registerResponse = await PostAsJsonWithCsrfAsync(registerClient, "/api/auth/register", new RegisterDto
+        {
+            FirstName = "Email",
+            LastName = "Case",
+            Email = mixedCaseEmail,
+            Password = password,
+            Role = "JobSeeker"
+        });
+        registerResponse.StatusCode.Should().Be(HttpStatusCode.OK);
+
+        using var loginClient = _factory.CreateClient();
+        var loginResponse = await PostAsJsonWithCsrfAsync(loginClient, "/api/auth/login", new LoginDto
+        {
+            Email = normalizedEmail.ToUpperInvariant(),
+            Password = password
+        });
+        loginResponse.StatusCode.Should().Be(HttpStatusCode.OK);
+        var loginBody = await loginResponse.Content.ReadFromJsonAsync<JsonElement>();
+        loginBody.GetProperty("email").GetString().Should().Be(normalizedEmail);
+
+        using var duplicateClient = _factory.CreateClient();
+        var duplicateResponse = await PostAsJsonWithCsrfAsync(duplicateClient, "/api/auth/register", new RegisterDto
+        {
+            FirstName = "Duplicate",
+            LastName = "Email",
+            Email = normalizedEmail.ToUpperInvariant(),
+            Password = password,
+            Role = "JobSeeker"
+        });
+        duplicateResponse.StatusCode.Should().Be(HttpStatusCode.BadRequest);
+    }
+
+    [Fact]
     public async Task Register_ThenLogin_Employer_MeReturnsTenantIdClaimMatchingRegisteredTenant()
     {
         var email = $"employer-{Guid.NewGuid()}@test.com";

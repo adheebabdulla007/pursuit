@@ -1,7 +1,7 @@
 ﻿using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Mvc.Testing;
 using Microsoft.Extensions.Configuration;
-using Testcontainers.MsSql;
+using Testcontainers.PostgreSql;
 using Testcontainers.RabbitMq;
 using Testcontainers.Redis;
 using Xunit;
@@ -11,8 +11,8 @@ namespace Pursuit.IntegrationTests;
 
 public class CustomWebApplicationFactory : WebApplicationFactory<Program>, IAsyncLifetime
 {
-    private readonly MsSqlContainer _sqlContainer =
-    new MsSqlBuilder("mcr.microsoft.com/mssql/server:2022-latest")
+    private readonly PostgreSqlContainer _postgresContainer =
+    new PostgreSqlBuilder("postgres:17-alpine")
         .Build();
 
     private readonly RedisContainer _redisContainer =
@@ -36,13 +36,13 @@ public class CustomWebApplicationFactory : WebApplicationFactory<Program>, IAsyn
     async Task IAsyncLifetime.InitializeAsync()
     {
         await Task.WhenAll(
-            _sqlContainer.StartAsync(),
+            _postgresContainer.StartAsync(),
             _redisContainer.StartAsync(),
             _rabbitMqContainer.StartAsync());
 
-        await DatabaseSchemaProvisioner.MigrateAsync(_sqlContainer.GetConnectionString());
+        await DatabaseSchemaProvisioner.MigrateAsync(_postgresContainer.GetConnectionString());
 
-        Environment.SetEnvironmentVariable("ConnectionStrings__DefaultConnection", _sqlContainer.GetConnectionString());
+        Environment.SetEnvironmentVariable("ConnectionStrings__DefaultConnection", _postgresContainer.GetConnectionString());
         Environment.SetEnvironmentVariable("RedisSettings__ConnectionString", _redisContainer.GetConnectionString());
         Environment.SetEnvironmentVariable("RabbitMqSettings__Host", _rabbitMqContainer.Hostname);
         Environment.SetEnvironmentVariable("RabbitMqSettings__Port", _rabbitMqContainer.GetMappedPublicPort(5672).ToString());
@@ -53,7 +53,7 @@ public class CustomWebApplicationFactory : WebApplicationFactory<Program>, IAsyn
     async Task IAsyncLifetime.DisposeAsync()
     {
         await Task.WhenAll(
-            _sqlContainer.DisposeAsync().AsTask(),
+            _postgresContainer.DisposeAsync().AsTask(),
             _redisContainer.DisposeAsync().AsTask(),
             _rabbitMqContainer.DisposeAsync().AsTask());
     }

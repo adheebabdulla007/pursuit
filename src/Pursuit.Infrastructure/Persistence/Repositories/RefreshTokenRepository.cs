@@ -1,4 +1,5 @@
 ﻿using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore.Storage;
 using Pursuit.Application.Interfaces;
 using Pursuit.Domain.Entities;
 using Pursuit.Infrastructure.Persistence;
@@ -30,9 +31,20 @@ public class RefreshTokenRepository : Repository<RefreshToken>, IRefreshTokenRep
         CancellationToken cancellationToken = default)
     {
         await using var transaction = await _context.Database.BeginTransactionAsync(cancellationToken);
-        await _context.Database.ExecuteSqlInterpolatedAsync(
-            $"SELECT [Id] FROM [Users] WITH (UPDLOCK, HOLDLOCK) WHERE [Id] = {userId}",
-            cancellationToken);
+        await using var command = _context.Database.GetDbConnection().CreateCommand();
+        command.Transaction = _context.Database.CurrentTransaction!.GetDbTransaction();
+        command.CommandText = """
+            SELECT "Id"
+            FROM "Users"
+            WHERE "Id" = @userId
+            FOR UPDATE;
+            """;
+
+        var userIdParameter = command.CreateParameter();
+        userIdParameter.ParameterName = "userId";
+        userIdParameter.Value = userId;
+        command.Parameters.Add(userIdParameter);
+        await command.ExecuteScalarAsync(cancellationToken);
 
         var result = await operation();
         await transaction.CommitAsync(cancellationToken);
@@ -78,19 +90,21 @@ public class RefreshTokenRepository : Repository<RefreshToken>, IRefreshTokenRep
         // Traverse only indexed replacement links. This keeps work proportional
         // to one device's rotation chain, regardless of other sessions or age.
         await _context.Database.ExecuteSqlInterpolatedAsync($"""
-            ;WITH TokenChain AS (
-                SELECT [Id], [ReplacedByTokenId] FROM [RefreshTokens]
-                WHERE [Id] = {tokenId} AND [UserId] = {userId}
+            WITH RECURSIVE token_chain AS (
+                SELECT "Id", "ReplacedByTokenId"
+                FROM "RefreshTokens"
+                WHERE "Id" = {tokenId} AND "UserId" = {userId}
                 UNION ALL
-                SELECT child.[Id], child.[ReplacedByTokenId]
-                FROM [RefreshTokens] AS child
-                INNER JOIN TokenChain AS parent ON child.[Id] = parent.[ReplacedByTokenId]
-                WHERE child.[UserId] = {userId}
+                SELECT child."Id", child."ReplacedByTokenId"
+                FROM "RefreshTokens" AS child
+                INNER JOIN token_chain AS parent
+                    ON child."Id" = parent."ReplacedByTokenId"
+                WHERE child."UserId" = {userId}
             )
-            UPDATE token SET [IsRevoked] = 1, [UpdatedAt] = SYSUTCDATETIME()
-            FROM [RefreshTokens] AS token
-            INNER JOIN TokenChain AS chain ON chain.[Id] = token.[Id]
-            OPTION (MAXRECURSION 32767)
+            UPDATE "RefreshTokens" AS token
+            SET "IsRevoked" = TRUE, "UpdatedAt" = CURRENT_TIMESTAMP
+            FROM token_chain AS chain
+            WHERE chain."Id" = token."Id";
             """, cancellationToken);
     }
 }

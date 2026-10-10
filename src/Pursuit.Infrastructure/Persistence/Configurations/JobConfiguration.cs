@@ -22,10 +22,10 @@ public class JobConfiguration : IEntityTypeConfiguration<Job>
             .HasMaxLength(200);
 
         builder.Property(j => j.SalaryMin)
-            .HasColumnType("decimal(18,2)");
+            .HasPrecision(18, 2);
 
         builder.Property(j => j.SalaryMax)
-            .HasColumnType("decimal(18,2)");
+            .HasPrecision(18, 2);
 
         builder.Property(j => j.JobType)
             .IsRequired();
