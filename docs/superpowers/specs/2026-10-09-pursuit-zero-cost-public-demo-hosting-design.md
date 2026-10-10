@@ -1,5 +1,10 @@
 # Pursuit zero-cost public demo hosting design
 
+> **Superseded on 2026-10-10:** MonsterASP.NET Free cannot satisfy Pursuit's
+> production TLS validation, backup, availability, or usage requirements. The
+> replacement design is
+> `docs/superpowers/specs/2026-10-10-pursuit-portable-public-demo-hosting-design.md`.
+
 Date: 2026-10-09
 
 ## Objective
