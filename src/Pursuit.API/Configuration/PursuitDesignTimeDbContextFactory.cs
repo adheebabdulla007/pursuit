@@ -17,7 +17,7 @@ public sealed class PursuitDesignTimeDbContextFactory : IDesignTimeDbContextFact
                 "ConnectionStrings:DefaultConnection is required to create migration artifacts.");
 
         var options = new DbContextOptionsBuilder<AppDbContext>()
-            .UseSqlServer(connectionString)
+            .UseNpgsql(connectionString)
             .Options;
 
         return new AppDbContext(options, new SystemDbContextScope());

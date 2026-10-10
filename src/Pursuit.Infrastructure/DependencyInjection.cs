@@ -21,7 +21,7 @@ public static class DependencyInjection
         IConfiguration configuration)
     {
         services.AddDbContext<AppDbContext>(options =>
-            options.UseSqlServer(configuration.GetConnectionString("DefaultConnection")));
+            options.UseNpgsql(configuration.GetConnectionString("DefaultConnection")));
 
         services.AddHttpContextAccessor();
         services.AddScoped<IDbContextScope, HttpDbContextScope>();

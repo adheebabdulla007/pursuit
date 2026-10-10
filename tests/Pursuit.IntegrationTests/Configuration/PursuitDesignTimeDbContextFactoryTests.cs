@@ -12,7 +12,7 @@ public sealed class PursuitDesignTimeDbContextFactoryTests
     private const string ConnectionKey = "ConnectionStrings__DefaultConnection";
 
     [Fact]
-    public void CreateDbContext_WithConnectionEnvironmentVariable_UsesSqlServerProvider()
+    public void CreateDbContext_WithConnectionEnvironmentVariable_UsesNpgsqlProvider()
     {
         var original = Environment.GetEnvironmentVariable(ConnectionKey);
 
@@ -20,11 +20,11 @@ public sealed class PursuitDesignTimeDbContextFactoryTests
         {
             Environment.SetEnvironmentVariable(
                 ConnectionKey,
-                "Server=localhost,1433;Database=PursuitDesignTime;User Id=sa;Password=Marker-Password-1!;TrustServerCertificate=True;");
+                "Host=localhost;Port=5432;Database=PursuitDesignTime;Username=postgres;Password=Marker-Password-1!;SSL Mode=Disable;");
 
             using var context = new PursuitDesignTimeDbContextFactory().CreateDbContext([]);
 
-            context.Database.ProviderName.Should().Be("Microsoft.EntityFrameworkCore.SqlServer");
+            context.Database.ProviderName.Should().Be("Npgsql.EntityFrameworkCore.PostgreSQL");
         }
         finally
         {

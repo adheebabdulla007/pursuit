@@ -39,7 +39,7 @@ public sealed class StartupConfigurationValidatorTests
     {
         var values = ValidValues();
         values["ConnectionStrings:DefaultConnection"] =
-            "Server=database;Database=Pursuit;User Id=pursuit;Password=StrongDbPassword!;TrustServerCertificate=True;";
+            "Host=database;Port=5432;Database=Pursuit;Username=pursuit;Password=StrongDbPassword!;SSL Mode=Require;Trust Server Certificate=true;";
         values["RabbitMqSettings:Username"] = "guest";
         values["RabbitMqSettings:Password"] = "guest";
         values["AzureBlobSettings:ConnectionString"] = "UseDevelopmentStorage=true;";
@@ -47,22 +47,33 @@ public sealed class StartupConfigurationValidatorTests
         var act = () => StartupConfigurationValidator.Validate(BuildConfiguration(values), isProduction: true);
 
         var exception = act.Should().Throw<InvalidOperationException>().Which;
-        exception.Message.Should().Contain("validate the server certificate")
+        exception.Message.Should().Contain("SSL Mode=VerifyFull")
+            .And.Contain("must validate the server certificate")
             .And.Contain("must not use the guest account")
             .And.Contain("must not use the development emulator");
     }
 
-    [Fact]
-    public void Validate_rejects_unencrypted_production_database_connection()
+    [Theory]
+    [InlineData("Host=database;Database=Pursuit;Username=pursuit;Password=StrongDbPassword!")]
+    [InlineData("Host=database;Database=Pursuit;Username=pursuit;Password=StrongDbPassword!;SSL Mode=Disable")]
+    [InlineData("Host=database;Database=Pursuit;Username=pursuit;Password=StrongDbPassword!;SSL Mode=Require")]
+    public void Validate_rejects_postgresql_production_connection_without_verified_tls(string connectionString)
     {
         var values = ValidValues();
-        values["ConnectionStrings:DefaultConnection"] =
-            "Server=database;Database=Pursuit;User Id=pursuit;Password=StrongDbPassword!;Encrypt=False;TrustServerCertificate=False;";
+        values["ConnectionStrings:DefaultConnection"] = connectionString;
 
         var act = () => StartupConfigurationValidator.Validate(BuildConfiguration(values), isProduction: true);
 
         act.Should().Throw<InvalidOperationException>()
-            .WithMessage("*must encrypt the connection*");
+            .WithMessage("*SSL Mode=VerifyFull*");
+    }
+
+    [Fact]
+    public void Validate_accepts_postgresql_production_connection_with_verified_tls()
+    {
+        var act = () => StartupConfigurationValidator.Validate(BuildConfiguration(), isProduction: true);
+
+        act.Should().NotThrow();
     }
 
     [Fact]
@@ -100,7 +111,7 @@ public sealed class StartupConfigurationValidatorTests
     private static Dictionary<string, string?> ValidValues() => new()
     {
         ["ConnectionStrings:DefaultConnection"] =
-            "Server=database;Database=Pursuit;User Id=pursuit;Password=StrongDbPassword!;Encrypt=True;TrustServerCertificate=False;",
+            "Host=database;Port=5432;Database=Pursuit;Username=pursuit;Password=StrongDbPassword!;SSL Mode=VerifyFull;Trust Server Certificate=false;",
         ["JwtSettings:Secret"] = "unit-test-signing-secret-with-more-than-32-bytes",
         ["JwtSettings:Issuer"] = "Pursuit",
         ["JwtSettings:Audience"] = "PursuitUsers",
