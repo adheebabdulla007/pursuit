@@ -6,26 +6,48 @@ namespace Pursuit.IntegrationTests.Deployment;
 public sealed class ComposeMigrationBoundaryTests
 {
     [Theory]
-    [InlineData("docker-compose.yml", "migrate", "sqlserver", "PursuitDb")]
-    [InlineData("docker-compose.e2e.yml", "migrate-e2e", "sqlserver-e2e", "PursuitDb")]
+    [InlineData("docker-compose.yml", "migrate", "postgres", "PursuitDb")]
+    [InlineData("docker-compose.e2e.yml", "migrate-e2e", "postgres-e2e", "PursuitDb")]
     public async Task ResolvedComposeConfig_DefinesOneShotMigrationService(
         string composeFile,
         string migrationService,
-        string sqlService,
+        string postgresService,
         string databaseName)
     {
         using var config = await ResolveComposeConfigAsync(composeFile);
         var services = config.RootElement.GetProperty("services");
         var migration = services.GetProperty(migrationService);
+        var postgres = services.GetProperty(postgresService);
 
         Assert.Contains("/app/migrations/efbundle", migration.GetProperty("entrypoint").GetRawText());
         Assert.Equal(
             "service_healthy",
-            migration.GetProperty("depends_on").GetProperty(sqlService).GetProperty("condition").GetString());
+            migration.GetProperty("depends_on").GetProperty(postgresService).GetProperty("condition").GetString());
         Assert.False(migration.TryGetProperty("ports", out _));
         var environment = migration.GetProperty("environment").GetRawText();
         Assert.Contains("ConnectionStrings__DefaultConnection", environment);
+        Assert.Contains($"Host={postgresService}", environment);
         Assert.Contains($"Database={databaseName}", environment);
+        Assert.Contains("SSL Mode=Disable", environment);
+        Assert.StartsWith("postgres:17-alpine", postgres.GetProperty("image").GetString());
+        Assert.Contains("pg_isready", postgres.GetProperty("healthcheck").GetRawText());
+        Assert.DoesNotContain("sqlserver", config.RootElement.GetRawText(), StringComparison.OrdinalIgnoreCase);
+        Assert.DoesNotContain("mssql", config.RootElement.GetRawText(), StringComparison.OrdinalIgnoreCase);
+    }
+
+    [Fact]
+    public void DockerfileAndCi_UsePostgreSqlMigrationConnectionsOnly()
+    {
+        var dockerfile = File.ReadAllText(Path.Combine(FindRepositoryRoot(), "Dockerfile"));
+        var workflow = File.ReadAllText(Path.Combine(FindRepositoryRoot(), ".github", "workflows", "ci.yml"));
+
+        Assert.Contains("Host=localhost;Port=5432;Database=PursuitBuild", dockerfile);
+        Assert.Contains("postgres:17-alpine", workflow);
+        Assert.Contains("Host=localhost;Port=5432;Database=PursuitMigrationCi", workflow);
+        Assert.DoesNotContain("mssql", dockerfile, StringComparison.OrdinalIgnoreCase);
+        Assert.DoesNotContain("mssql", workflow, StringComparison.OrdinalIgnoreCase);
+        Assert.DoesNotContain("TrustServerCertificate", dockerfile, StringComparison.OrdinalIgnoreCase);
+        Assert.DoesNotContain("TrustServerCertificate", workflow, StringComparison.OrdinalIgnoreCase);
     }
 
     [Fact]
@@ -55,7 +77,7 @@ public sealed class ComposeMigrationBoundaryTests
         startInfo.ArgumentList.Add("config");
         startInfo.ArgumentList.Add("--format");
         startInfo.ArgumentList.Add("json");
-        startInfo.Environment["SA_PASSWORD"] = "ComposeBoundary1!";
+        startInfo.Environment["POSTGRES_PASSWORD"] = "compose-boundary-test-password";
         startInfo.Environment["JWT_SECRET"] = "compose-boundary-test-secret-at-least-32-bytes";
 
         using var process = Process.Start(startInfo)

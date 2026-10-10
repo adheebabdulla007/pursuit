@@ -2,19 +2,20 @@ name: pursuit-e2e
 
 services:
 
-  sqlserver-e2e:
-    image: mcr.microsoft.com/mssql/server:2022-latest
+  postgres-e2e:
+    image: postgres:17-alpine
     environment:
-      SA_PASSWORD: "${SA_PASSWORD}"
-      ACCEPT_EULA: "Y"
+      POSTGRES_DB: "PursuitDb"
+      POSTGRES_USER: "pursuit"
+      POSTGRES_PASSWORD: "${POSTGRES_PASSWORD}"
     ports:
-      - "1435:1433"
+      - "5434:5432"
     healthcheck:
-      test: ["CMD-SHELL", "/opt/mssql-tools18/bin/sqlcmd -S localhost -U sa -P $$SA_PASSWORD -C -Q 'SELECT 1' || exit 1"]
+      test: ["CMD-SHELL", "pg_isready -U pursuit -d PursuitDb"]
       interval: 10s
       timeout: 5s
       retries: 10
-      start_period: 30s
+      start_period: 10s
 
   redis-e2e:
     image: redis:7-alpine
@@ -49,7 +50,7 @@ services:
       dockerfile: Dockerfile
     entrypoint: ["/app/migrations/efbundle"]
     environment:
-      ConnectionStrings__DefaultConnection: "Server=sqlserver-e2e,1433;Database=PursuitDb;User Id=sa;Password=${SA_PASSWORD};TrustServerCertificate=True;"
+      ConnectionStrings__DefaultConnection: "Host=postgres-e2e;Port=5432;Database=PursuitDb;Username=pursuit;Password=${POSTGRES_PASSWORD};SSL Mode=Disable;"
     depends_on:
-      sqlserver-e2e:
+      postgres-e2e:
         condition: service_healthy

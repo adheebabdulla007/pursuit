@@ -17,9 +17,18 @@ settings through the deployment platform's secret store or environment variables
 - `Cors__AllowedOrigins__0`, `Cors__AllowedOrigins__1`, and so on when the client
   is hosted on a different origin
 
-Production rejects unencrypted SQL Server connections, SQL Server certificate
-bypass, the RabbitMQ guest account, and Azurite's development storage connection. Configuration validation checks shape
+Production requires PostgreSQL `SSL Mode=VerifyFull`, rejects certificate bypass,
+the RabbitMQ guest account, and Azurite's development storage connection. Configuration validation checks shape
 and policy only; dependency connectivity belongs in deployment readiness checks.
+
+A hosted PostgreSQL connection must keep hostname verification enabled:
+
+```text
+Host=<provider-host>;Port=5432;Database=<database>;Username=<api-user>;Password=<secret>;SSL Mode=VerifyFull;
+```
+
+Do not add `Trust Server Certificate=true`. Store the complete value in the
+hosting provider's secret manager, never in a tracked file.
 
 ## Database migrations
 
@@ -43,7 +52,7 @@ To build the same Linux artifact outside CI:
 
 ```powershell
 dotnet tool restore
-$env:ConnectionStrings__DefaultConnection = "Server=localhost;Database=PursuitBuild;User Id=build;Password=BuildOnly1!;TrustServerCertificate=True;"
+$env:ConnectionStrings__DefaultConnection = "Host=localhost;Port=5432;Database=PursuitBuild;Username=build;Password=BuildOnly1!;SSL Mode=Disable;"
 dotnet dotnet-ef migrations bundle --project src/Pursuit.Infrastructure --startup-project src/Pursuit.API --configuration Release --target-runtime linux-x64 --output artifacts/migrations/efbundle --force
 Remove-Item Env:ConnectionStrings__DefaultConnection
 ```
@@ -71,8 +80,8 @@ AdminBootstrapSettings__Password=<unique strong password>
 ```
 
 The password must be at least 12 characters and include uppercase, lowercase,
-numeric, and non-alphanumeric characters. Bootstrap execution takes a SQL Server
-application lock, so concurrent replicas serialize the check-and-create operation.
+numeric, and non-alphanumeric characters. Bootstrap execution takes a PostgreSQL
+transaction-scoped advisory lock, so concurrent replicas serialize the check-and-create operation.
 If an administrator already exists, startup leaves it unchanged.
 
 After the first administrator exists, remove the email and password settings and

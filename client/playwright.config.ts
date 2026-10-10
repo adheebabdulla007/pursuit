@@ -35,7 +35,7 @@ export default defineConfig({
     {
       command: 'dotnet run --launch-profile e2e --project ../src/Pursuit.API',
       env: {
-        ConnectionStrings__DefaultConnection: process.env.ConnectionStrings__DefaultConnection ?? 'Server=localhost,1435;Database=PursuitDb;User Id=sa;Password=Pursuit@Str0ng2024;TrustServerCertificate=True;',
+        ConnectionStrings__DefaultConnection: process.env.ConnectionStrings__DefaultConnection ?? 'Host=localhost;Port=5434;Database=PursuitDb;Username=pursuit;Password=pursuit-e2e-database-password;SSL Mode=Disable;',
         JwtSettings__Secret: process.env.JwtSettings__Secret ?? 'pursuit-e2e-local-secret-key-must-be-at-least-32-characters',
         JwtSettings__Issuer: 'Pursuit',
         JwtSettings__Audience: 'PursuitUsers',

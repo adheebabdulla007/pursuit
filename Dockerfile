@@ -13,7 +13,7 @@ RUN dotnet restore src/Pursuit.API/Pursuit.API.csproj
 COPY . .
 
 RUN dotnet tool restore && \
-    ConnectionStrings__DefaultConnection="Server=localhost,1433;Database=PursuitBuild;User Id=sa;Password=BuildOnly-Password-1!;TrustServerCertificate=True;" \
+    ConnectionStrings__DefaultConnection="Host=localhost;Port=5432;Database=PursuitBuild;Username=pursuit;Password=build-only-password;SSL Mode=Disable;" \
     dotnet dotnet-ef migrations bundle \
     --project src/Pursuit.Infrastructure \
     --startup-project src/Pursuit.API \

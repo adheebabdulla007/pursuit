@@ -43,22 +43,23 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 15
     env:
-      SA_PASSWORD: "PursuitMigrationCI!2026"
-      ConnectionStrings__DefaultConnection: "Server=localhost,1433;Database=PursuitMigrationCi;User Id=sa;Password=PursuitMigrationCI!2026;TrustServerCertificate=True;"
+      POSTGRES_PASSWORD: "pursuit-migration-ci-password"
+      ConnectionStrings__DefaultConnection: "Host=localhost;Port=5432;Database=PursuitMigrationCi;Username=pursuit;Password=pursuit-migration-ci-password;SSL Mode=Disable;"
     services:
-      sqlserver:
-        image: mcr.microsoft.com/mssql/server:2022-latest
+      postgres:
+        image: postgres:17-alpine
         env:
-          ACCEPT_EULA: "Y"
-          MSSQL_SA_PASSWORD: "PursuitMigrationCI!2026"
+          POSTGRES_DB: "PursuitMigrationCi"
+          POSTGRES_USER: "pursuit"
+          POSTGRES_PASSWORD: "pursuit-migration-ci-password"
         ports:
-          - 1433:1433
+          - 5432:5432
         options: >-
-          --health-cmd "/opt/mssql-tools18/bin/sqlcmd -S localhost -U sa -P 'PursuitMigrationCI!2026' -C -Q 'SELECT 1' || exit 1"
+          --health-cmd "pg_isready -U pursuit -d PursuitMigrationCi"
           --health-interval 10s
           --health-timeout 5s
           --health-retries 10
-          --health-start-period 30s
+          --health-start-period 10s
 
     steps:
       - name: Check out repository
@@ -136,8 +137,8 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 25
     env:
-      SA_PASSWORD: "PursuitE2E!2026Strong"
-      ConnectionStrings__DefaultConnection: "Server=localhost,1435;Database=PursuitDb;User Id=sa;Password=PursuitE2E!2026Strong;TrustServerCertificate=True;"
+      POSTGRES_PASSWORD: "pursuit-e2e-database-password"
+      ConnectionStrings__DefaultConnection: "Host=localhost;Port=5434;Database=PursuitDb;Username=pursuit;Password=pursuit-e2e-database-password;SSL Mode=Disable;"
       JwtSettings__Secret: "pursuit-ci-secret-key-must-be-at-least-32-characters"
       JwtSettings__Issuer: "Pursuit"
       JwtSettings__Audience: "PursuitUsers"
