@@ -28,7 +28,8 @@ private provider accounts and sanitized hosted evidence.
 | Focused configuration/deployment tests | 44 passed, 0 failed | Pass |
 | Release solution build | 0 warnings, 0 errors | Pass |
 | Frontend | ESLint passed; 83 Vitest tests passed; production build passed | Pass |
-| Complete backend suite | 116 passed, 0 failed with Docker-backed PostgreSQL, Redis and RabbitMQ | Pass |
+| Complete backend suite | 118 passed, 0 failed with Docker-backed PostgreSQL, Redis and RabbitMQ | Pass |
+| Search portability | Mixed-case title/location matching and literal `%`/`_` searches return aligned items and counts under PostgreSQL | Pass |
 | Docker image and embedded runner | Clean production image built; `/app/migrations/Pursuit.Migrations` exists and is executable | Pass |
 | Production container boundary | Plaintext Production connection exited 1 with the fixed `VerifyFull` error and did not expose the marker password | Pass |
 | Empty/current container database | Fresh PostgreSQL migration completed, then the idempotent rerun completed | Pass |

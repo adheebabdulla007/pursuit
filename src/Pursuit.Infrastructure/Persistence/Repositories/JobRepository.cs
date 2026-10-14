@@ -30,15 +30,7 @@ public class JobRepository : Repository<Job>, IJobRepository
         var query = _dbSet
             .Include(j => j.Tenant)
             .Where(j => j.IsActive);
-
-        if (!string.IsNullOrWhiteSpace(title))
-            query = query.Where(j => j.Title.Contains(title));
-
-        if (!string.IsNullOrWhiteSpace(location))
-            query = query.Where(j => j.Location.Contains(location));
-
-        if (jobType.HasValue)
-            query = query.Where(j => j.JobType == jobType.Value);
+        query = ApplySearchFilters(query, title, location, jobType);
 
         return await query
             .OrderByDescending(j => j.CreatedAt)
@@ -56,15 +48,7 @@ public class JobRepository : Repository<Job>, IJobRepository
     {
         var query = _dbSet
             .Where(j => j.IsActive);
-
-        if (!string.IsNullOrWhiteSpace(title))
-            query = query.Where(j => j.Title.Contains(title));
-
-        if (!string.IsNullOrWhiteSpace(location))
-            query = query.Where(j => j.Location.Contains(location));
-
-        if (jobType.HasValue)
-            query = query.Where(j => j.JobType == jobType.Value);
+        query = ApplySearchFilters(query, title, location, jobType);
 
         return await query.CountAsync(cancellationToken);
     }
@@ -108,4 +92,31 @@ public class JobRepository : Repository<Job>, IJobRepository
 
         return await query.CountAsync(cancellationToken);
     }
+
+    private static IQueryable<Job> ApplySearchFilters(
+        IQueryable<Job> query,
+        string? title,
+        string? location,
+        JobType? jobType)
+    {
+        if (!string.IsNullOrWhiteSpace(title))
+        {
+            var titlePattern = ToLiteralSubstringPattern(title);
+            query = query.Where(job => EF.Functions.ILike(job.Title, titlePattern, "\\"));
+        }
+
+        if (!string.IsNullOrWhiteSpace(location))
+        {
+            var locationPattern = ToLiteralSubstringPattern(location);
+            query = query.Where(job => EF.Functions.ILike(job.Location, locationPattern, "\\"));
+        }
+
+        if (jobType.HasValue)
+            query = query.Where(job => job.JobType == jobType.Value);
+
+        return query;
+    }
+
+    private static string ToLiteralSubstringPattern(string value) =>
+        $"%{value.Replace("\\", "\\\\").Replace("%", "\\%").Replace("_", "\\_")}%";
 }

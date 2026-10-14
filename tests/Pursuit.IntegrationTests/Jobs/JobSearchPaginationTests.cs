@@ -105,6 +105,59 @@ public class JobSearchPaginationTests
     }
 
     [Fact]
+    public async Task Search_MatchesTitleAndLocationCaseInsensitively_AndKeepsCountAligned()
+    {
+        var marker = $"mixed-case-{Guid.NewGuid():N}";
+        var jobId = Guid.NewGuid();
+
+        using (var scope = _factory.Services.CreateScope())
+        {
+            var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
+            var tenant = NewTenant(marker);
+            var job = NewJob(jobId, tenant.Id, $"Platform Developer {marker}");
+            job.Location = $"ReMoTe-{marker}";
+            db.Tenants.Add(tenant);
+            db.Jobs.Add(job);
+            await db.SaveChangesAsync();
+        }
+
+        using var client = _factory.CreateClient();
+        var search = await GetPageAsync(
+            client,
+            $"developer {marker}",
+            page: 1,
+            pageSize: 10,
+            location: $"remote-{marker}");
+
+        search.TotalCount.Should().Be(1);
+        search.Items.Should().ContainSingle(job => job.Id == jobId);
+    }
+
+    [Fact]
+    public async Task Search_TreatsPercentAndUnderscoreAsLiteralCharacters()
+    {
+        var marker = $"wildcard-{Guid.NewGuid():N}";
+        var literalId = Guid.NewGuid();
+
+        using (var scope = _factory.Services.CreateScope())
+        {
+            var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
+            var tenant = NewTenant(marker);
+            db.Tenants.Add(tenant);
+            db.Jobs.AddRange(
+                NewJob(literalId, tenant.Id, $"C%_ Developer {marker}"),
+                NewJob(Guid.NewGuid(), tenant.Id, $"CXX Developer {marker}"));
+            await db.SaveChangesAsync();
+        }
+
+        using var client = _factory.CreateClient();
+        var search = await GetPageAsync(client, $"%_ Developer {marker}", page: 1, pageSize: 10);
+
+        search.TotalCount.Should().Be(1);
+        search.Items.Should().ContainSingle(job => job.Id == literalId);
+    }
+
+    [Fact]
     public async Task AdminStats_TotalJobsStillIncludesClosedJobs()
     {
         var marker = $"admin-count-{Guid.NewGuid():N}";
@@ -148,10 +201,14 @@ public class JobSearchPaginationTests
         HttpClient client,
         string keyword,
         int page,
-        int pageSize)
+        int pageSize,
+        string? location = null)
     {
+        var locationQuery = location is null
+            ? string.Empty
+            : $"&location={Uri.EscapeDataString(location)}";
         var response = await client.GetAsync(
-            $"/api/jobs?keyword={Uri.EscapeDataString(keyword)}&page={page}&pageSize={pageSize}");
+            $"/api/jobs?keyword={Uri.EscapeDataString(keyword)}{locationQuery}&page={page}&pageSize={pageSize}");
         response.EnsureSuccessStatusCode();
 
         return (await response.Content.ReadFromJsonAsync<PagedResult<JobDto>>(JsonOptions))!;

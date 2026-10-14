@@ -131,7 +131,7 @@ The GitHub Actions workflow runs four jobs on every push and pull request:
 
 | Job | Checks |
 | --- | --- |
-| Backend | Release build and 116 PostgreSQL, Redis, RabbitMQ, API, and configuration tests |
+| Backend | Release build and 118 PostgreSQL, Redis, RabbitMQ, API, and configuration tests |
 | Migrations | Fail-closed Linux runner build, production TLS rejection check, empty-database migration, idempotent rerun, and retained artifact |
 | Frontend | ESLint, 83 Vitest component tests, and a production build |
 | Browser | Playwright employer-to-job-seeker journey across Chromium, Firefox, and WebKit |
