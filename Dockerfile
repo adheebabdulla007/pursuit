@@ -7,20 +7,22 @@ COPY src/Pursuit.Domain/Pursuit.Domain.csproj src/Pursuit.Domain/
 COPY src/Pursuit.Application/Pursuit.Application.csproj src/Pursuit.Application/
 COPY src/Pursuit.Infrastructure/Pursuit.Infrastructure.csproj src/Pursuit.Infrastructure/
 COPY src/Pursuit.API/Pursuit.API.csproj src/Pursuit.API/
+COPY src/Pursuit.Migrations/Pursuit.Migrations.csproj src/Pursuit.Migrations/
 
-RUN dotnet restore src/Pursuit.API/Pursuit.API.csproj
+RUN dotnet restore src/Pursuit.API/Pursuit.API.csproj && \
+    dotnet restore src/Pursuit.Migrations/Pursuit.Migrations.csproj --runtime linux-x64
 
 COPY . .
 
-RUN dotnet tool restore && \
-    ConnectionStrings__DefaultConnection="Host=localhost;Port=5432;Database=PursuitBuild;Username=pursuit;Password=build-only-password;SSL Mode=Disable;" \
-    dotnet dotnet-ef migrations bundle \
-    --project src/Pursuit.Infrastructure \
-    --startup-project src/Pursuit.API \
-    --configuration Release \
-    --target-runtime linux-x64 \
-    --output /app/migrations/efbundle \
-    --force
+ARG PURSUIT_ALLOW_INSECURE_LOCAL_MIGRATIONS=false
+RUN dotnet publish src/Pursuit.Migrations/Pursuit.Migrations.csproj \
+    -c Release \
+    -r linux-x64 \
+    --self-contained false \
+    -p:PublishSingleFile=true \
+    -p:AllowInsecureLocalMigrations=${PURSUIT_ALLOW_INSECURE_LOCAL_MIGRATIONS} \
+    -o /app/migrations \
+    --no-restore
 
 RUN dotnet publish src/Pursuit.API/Pursuit.API.csproj \
     -c Release \
@@ -32,6 +34,6 @@ FROM mcr.microsoft.com/dotnet/aspnet:10.0 AS runtime
 WORKDIR /app
 COPY --from=build /app/publish .
 COPY --from=build /app/migrations ./migrations
-RUN chmod 0755 /app/migrations/efbundle
+RUN chmod 0755 /app/migrations/Pursuit.Migrations
 EXPOSE 8080
 ENTRYPOINT ["dotnet", "Pursuit.API.dll"]

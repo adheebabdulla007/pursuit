@@ -11,8 +11,8 @@ This roadmap orders work by user impact, production risk, and what the change te
 - CSRF protection for browser mutations
 - Public registration role allowlist
 - Production configuration checks and opt-in administrator bootstrap
-- One-command Docker Compose stack for the API, client, SQL Server, Redis, RabbitMQ, and Azurite
-- EF Core migration bundle, one-time migration jobs, and API startup without schema changes
+- One-command Docker Compose stack for the API, client, PostgreSQL, Redis, RabbitMQ, and Azurite
+- Fail-closed PostgreSQL migration runner, one-time migration jobs, and API startup without schema changes
 
 ## 1. Product experience and UI review
 
@@ -52,18 +52,18 @@ Evidence required:
 
 ## 4. Deployment migration boundary (implemented)
 
-CI builds an EF Core migration bundle and runs it against empty and current databases. Docker Compose uses the same application image for a one-time migration job and blocks API startup when that job fails. `MigrateAsync` no longer runs during API startup, so the deployed API identity can be denied schema-alteration permissions.
+CI builds the `Pursuit.Migrations` artifact and runs it against empty and current databases. Docker Compose uses the same application image for a one-time migration job and blocks API startup when that job fails. The runner validates production PostgreSQL TLS before connecting. `MigrateAsync` remains outside API startup, so the deployed API identity can be denied schema-alteration permissions.
 
 Evidence:
 
-- A clean SQL Server database reached the latest schema in local verification.
+- A clean PostgreSQL database reached the latest schema in local verification.
 - Two reruns reported that the database was already up to date.
 - An invalid migration connection exited with code 1 and kept the dependent service stopped.
 - The rollback rule is documented. Provider backup and restore rehearsal remains part of the hosting setup.
 
 ## 5. Readiness and shutdown
 
-Keep a lightweight liveness endpoint and add readiness checks for SQL Server, Redis, RabbitMQ, and Blob Storage. The RabbitMQ consumer now tolerates an already-disposed recovery channel during host shutdown; keep clean shutdown behavior covered by the integration suite.
+Keep a lightweight liveness endpoint and add readiness checks for PostgreSQL, Redis, RabbitMQ, and Blob Storage. The RabbitMQ consumer now tolerates an already-disposed recovery channel during host shutdown; keep clean shutdown behavior covered by the integration suite.
 
 Evidence required:
 

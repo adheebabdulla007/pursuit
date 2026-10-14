@@ -38,13 +38,14 @@ jobs:
       - name: Run integration tests
         run: dotnet test Pursuit.slnx --configuration Release --no-build --logger "console;verbosity=normal"
 
-  migration-bundle:
-    name: Migration bundle build and execution
+  migrations:
+    name: Migration runner build and execution
     runs-on: ubuntu-latest
     timeout-minutes: 15
     env:
       POSTGRES_PASSWORD: "pursuit-migration-ci-password"
-      ConnectionStrings__DefaultConnection: "Host=localhost;Port=5432;Database=PursuitMigrationCi;Username=pursuit;Password=pursuit-migration-ci-password;SSL Mode=Disable;"
+      DOTNET_ENVIRONMENT: "Testing"
+      ConnectionStrings__DefaultConnection: "Host=localhost;Port=5432;Database=PursuitMigrationCi;Username=pursuit;Password=pursuit-migration-ci-password;SSL Mode=Disable;GSS Encryption Mode=Disable;"
     services:
       postgres:
         image: postgres:17-alpine
@@ -70,33 +71,49 @@ jobs:
         with:
           global-json-file: global.json
 
-      - name: Restore backend dependencies
-        run: dotnet restore src/Pursuit.API/Pursuit.API.csproj
+      - name: Restore migration runner dependencies
+        run: dotnet restore src/Pursuit.Migrations/Pursuit.Migrations.csproj --runtime linux-x64
 
-      - name: Restore migration tool
-        run: dotnet tool restore
-
-      - name: Build Linux migration bundle
+      - name: Build production Linux migration runner
         run: >-
-          dotnet dotnet-ef migrations bundle
-          --project src/Pursuit.Infrastructure
-          --startup-project src/Pursuit.API
+          dotnet publish src/Pursuit.Migrations/Pursuit.Migrations.csproj
           --configuration Release
-          --target-runtime linux-x64
-          --output artifacts/migrations/efbundle
-          --force
+          --runtime linux-x64
+          --self-contained false
+          -p:PublishSingleFile=true
+          --output artifacts/migrations
+          --no-restore
 
-      - name: Apply migration bundle to empty database
-        run: ./artifacts/migrations/efbundle --connection "$ConnectionStrings__DefaultConnection"
+      - name: Verify production runner rejects plaintext
+        run: |
+          if output=$(./artifacts/migrations/Pursuit.Migrations 2>&1); then
+            echo "Production migration runner accepted a plaintext connection."
+            exit 1
+          fi
+          echo "$output" | grep -F "SSL Mode=VerifyFull"
 
-      - name: Verify migration bundle is idempotent
-        run: ./artifacts/migrations/efbundle --connection "$ConnectionStrings__DefaultConnection"
+      - name: Build local-test migration runner
+        run: >-
+          dotnet publish src/Pursuit.Migrations/Pursuit.Migrations.csproj
+          --configuration Release
+          --runtime linux-x64
+          --self-contained false
+          -p:PublishSingleFile=true
+          -p:AllowInsecureLocalMigrations=true
+          --output artifacts/migrations-test
+          --no-restore
 
-      - name: Upload migration bundle
+      - name: Apply migrations to empty database
+        run: ./artifacts/migrations-test/Pursuit.Migrations
+
+      - name: Verify migration runner is idempotent
+        run: ./artifacts/migrations-test/Pursuit.Migrations
+
+      - name: Upload migration runner
         uses: actions/upload-artifact@v7
         with:
-          name: pursuit-migration-bundle-linux-x64
-          path: artifacts/migrations/efbundle
+          name: pursuit-migrations-linux-x64
+          path: artifacts/migrations/Pursuit.Migrations
           if-no-files-found: error
           retention-days: 7
 
@@ -138,7 +155,7 @@ jobs:
     timeout-minutes: 25
     env:
       POSTGRES_PASSWORD: "pursuit-e2e-database-password"
-      ConnectionStrings__DefaultConnection: "Host=localhost;Port=5434;Database=PursuitDb;Username=pursuit;Password=pursuit-e2e-database-password;SSL Mode=Disable;"
+      ConnectionStrings__DefaultConnection: "Host=localhost;Port=5434;Database=PursuitDb;Username=pursuit;Password=pursuit-e2e-database-password;SSL Mode=Disable;GSS Encryption Mode=Disable;"
       JwtSettings__Secret: "pursuit-ci-secret-key-must-be-at-least-32-characters"
       JwtSettings__Issuer: "Pursuit"
       JwtSettings__Audience: "PursuitUsers"

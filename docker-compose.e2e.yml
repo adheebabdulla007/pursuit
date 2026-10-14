@@ -48,9 +48,12 @@ services:
     build:
       context: .
       dockerfile: Dockerfile
-    entrypoint: ["/app/migrations/efbundle"]
+      args:
+        PURSUIT_ALLOW_INSECURE_LOCAL_MIGRATIONS: "true"
+    entrypoint: ["/app/migrations/Pursuit.Migrations"]
     environment:
-      ConnectionStrings__DefaultConnection: "Host=postgres-e2e;Port=5432;Database=PursuitDb;Username=pursuit;Password=${POSTGRES_PASSWORD};SSL Mode=Disable;"
+      DOTNET_ENVIRONMENT: "Testing"
+      ConnectionStrings__DefaultConnection: "Host=postgres-e2e;Port=5432;Database=PursuitDb;Username=pursuit;Password=${POSTGRES_PASSWORD};SSL Mode=Disable;GSS Encryption Mode=Disable;"
     depends_on:
       postgres-e2e:
         condition: service_healthy

@@ -3,6 +3,8 @@ x-api-image: &api-image
   build:
     context: .
     dockerfile: Dockerfile
+    args:
+      PURSUIT_ALLOW_INSECURE_LOCAL_MIGRATIONS: "true"
 
 services:
 
@@ -50,9 +52,10 @@ services:
 
   migrate:
     <<: *api-image
-    entrypoint: ["/app/migrations/efbundle"]
+    entrypoint: ["/app/migrations/Pursuit.Migrations"]
     environment:
-      ConnectionStrings__DefaultConnection: "Host=postgres;Port=5432;Database=PursuitDb;Username=pursuit;Password=${POSTGRES_PASSWORD};SSL Mode=Disable;"
+      DOTNET_ENVIRONMENT: "Development"
+      ConnectionStrings__DefaultConnection: "Host=postgres;Port=5432;Database=PursuitDb;Username=pursuit;Password=${POSTGRES_PASSWORD};SSL Mode=Disable;GSS Encryption Mode=Disable;"
     depends_on:
       postgres:
         condition: service_healthy
@@ -63,7 +66,7 @@ services:
       - "5000:8080"
     environment:
       ASPNETCORE_ENVIRONMENT: "Development"
-      ConnectionStrings__DefaultConnection: "Host=postgres;Port=5432;Database=PursuitDb;Username=pursuit;Password=${POSTGRES_PASSWORD};SSL Mode=Disable;"
+      ConnectionStrings__DefaultConnection: "Host=postgres;Port=5432;Database=PursuitDb;Username=pursuit;Password=${POSTGRES_PASSWORD};SSL Mode=Disable;GSS Encryption Mode=Disable;"
       JwtSettings__Secret: "${JWT_SECRET}"
       JwtSettings__Issuer: "Pursuit"
       JwtSettings__Audience: "PursuitUsers"

@@ -1,5 +1,10 @@
 # Pursuit Deployment Migration Boundary Implementation Plan
 
+> **Superseded on 2026-10-13.** This plan is retained as historical decision
+> context. Do not execute its SQL Server or EF bundle steps. Use
+> `docs/superpowers/plans/2026-10-10-pursuit-postgresql-portability.md` and the
+> `Pursuit.Migrations` production artifact.
+
 > **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.
 
 **Goal:** Remove database migration from API startup and provide one explicit migration step that works locally, in browser tests, and in a production container deployment.

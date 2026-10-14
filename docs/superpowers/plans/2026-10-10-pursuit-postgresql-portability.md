@@ -25,7 +25,7 @@
 - A Production connection that omits `SSL Mode` must fail startup rather than inherit Npgsql's permissive default.
 - `SSL Mode=Require` must fail Production because it encrypts without authenticating the server.
 - Case-insensitive email and slug uniqueness must behave the same under PostgreSQL as under the existing application contract.
-- Migration bundles must be idempotent against both an empty and current PostgreSQL database.
+- Migration artifacts must be idempotent against both an empty and current PostgreSQL database.
 - Tenant-filtered queries must not leak records through provider-specific translation differences.
 
 ---
@@ -130,7 +130,7 @@ Commit: `refactor: migrate schema and tests to PostgreSQL`
 
 **Interfaces:**
 - Consumes: Task 2 PostgreSQL migrations and connection format.
-- Produces: PostgreSQL local/E2E services, Linux migration bundle, CI migration execution and operator documentation.
+- Produces: PostgreSQL local/E2E services, Linux migration runner, CI migration execution and operator documentation.
 
 - [ ] **Step 1: Change deployment-boundary tests to require PostgreSQL**
 
@@ -142,9 +142,9 @@ Run: `dotnet test tests/Pursuit.IntegrationTests/Pursuit.IntegrationTests.csproj
 
 Expected: FAIL because Compose and CI still provision SQL Server.
 
-- [ ] **Step 3: Convert Compose, Docker migration bundling and CI to PostgreSQL 17**
+- [ ] **Step 3: Convert Compose, the Docker migration artifact and CI to PostgreSQL 17**
 
-Keep migrations outside API startup. CI runs the bundle twice against an empty PostgreSQL service and uploads only the reviewed bundle artifact.
+Keep migrations outside API startup. CI runs the migration artifact twice against an empty PostgreSQL service and uploads only the reviewed artifact.
 
 - [ ] **Step 4: Update operator documentation**
 

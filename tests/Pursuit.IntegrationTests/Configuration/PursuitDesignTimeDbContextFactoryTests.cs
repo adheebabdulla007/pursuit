@@ -14,13 +14,15 @@ public sealed class PursuitDesignTimeDbContextFactoryTests
     [Fact]
     public void CreateDbContext_WithConnectionEnvironmentVariable_UsesNpgsqlProvider()
     {
-        var original = Environment.GetEnvironmentVariable(ConnectionKey);
+        var originalConnection = Environment.GetEnvironmentVariable(ConnectionKey);
+        var originalEnvironment = Environment.GetEnvironmentVariable("DOTNET_ENVIRONMENT");
 
         try
         {
+            Environment.SetEnvironmentVariable("DOTNET_ENVIRONMENT", "Development");
             Environment.SetEnvironmentVariable(
                 ConnectionKey,
-                "Host=localhost;Port=5432;Database=PursuitDesignTime;Username=postgres;Password=Marker-Password-1!;SSL Mode=Disable;");
+                "Host=localhost;Port=5432;Database=PursuitDesignTime;Username=postgres;Password=Marker-Password-1!;SSL Mode=Disable;GSS Encryption Mode=Disable;");
 
             using var context = new PursuitDesignTimeDbContextFactory().CreateDbContext([]);
 
@@ -28,7 +30,8 @@ public sealed class PursuitDesignTimeDbContextFactoryTests
         }
         finally
         {
-            Environment.SetEnvironmentVariable(ConnectionKey, original);
+            Environment.SetEnvironmentVariable(ConnectionKey, originalConnection);
+            Environment.SetEnvironmentVariable("DOTNET_ENVIRONMENT", originalEnvironment);
         }
     }
 
@@ -52,4 +55,31 @@ public sealed class PursuitDesignTimeDbContextFactoryTests
             Environment.SetEnvironmentVariable(ConnectionKey, original);
         }
     }
+
+    [Fact]
+    public void CreateDbContext_RejectsExternalDatabaseEvenWhenDevelopmentIsSelected()
+    {
+        var originalConnection = Environment.GetEnvironmentVariable(ConnectionKey);
+        var originalEnvironment = Environment.GetEnvironmentVariable("DOTNET_ENVIRONMENT");
+
+        try
+        {
+            Environment.SetEnvironmentVariable("DOTNET_ENVIRONMENT", "Development");
+            Environment.SetEnvironmentVariable(
+                ConnectionKey,
+                "Host=provider.example.com;Database=Pursuit;Username=pursuit;Password=Marker-Password-1!;SSL Mode=Disable;GSS Encryption Mode=Disable;");
+
+            var action = () => new PursuitDesignTimeDbContextFactory().CreateDbContext([]);
+
+            action.Should().Throw<InvalidOperationException>()
+                .WithMessage("*Use Pursuit.Migrations for deployment.*")
+                .Which.Message.Should().NotContain("Marker-Password-1!");
+        }
+        finally
+        {
+            Environment.SetEnvironmentVariable(ConnectionKey, originalConnection);
+            Environment.SetEnvironmentVariable("DOTNET_ENVIRONMENT", originalEnvironment);
+        }
+    }
+
 }

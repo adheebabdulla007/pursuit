@@ -24,7 +24,7 @@ docker compose up --build -d --wait
 
 Open [http://localhost:5173](http://localhost:5173).
 
-The first build downloads the .NET, Node, SQL Server, Redis, RabbitMQ, Azurite, and Nginx images. Later starts reuse those layers.
+The first build downloads the .NET, Node, PostgreSQL, Redis, RabbitMQ, Azurite, and Nginx images. Later starts reuse those layers.
 
 If Docker reports a daemon connection error, start Docker Desktop or the Docker service and confirm `docker info` succeeds.
 
@@ -56,7 +56,7 @@ Copy the job title for the job-seeker search.
 
 ### 4. Apply with a resume
 
-Upload a PDF or DOCX file smaller than 5 MB and select **Apply**. The API stores the file in Azurite, inserts the application in SQL Server, and publishes an event to RabbitMQ.
+Upload a PDF or DOCX file smaller than 5 MB and select **Apply**. The API stores the file in Azurite, inserts the application in PostgreSQL, and publishes an event to RabbitMQ.
 
 The RabbitMQ management page is available at [http://localhost:15672](http://localhost:15672). The local broker uses the standard development `guest` account.
 

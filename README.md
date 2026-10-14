@@ -36,7 +36,7 @@ docker compose up --build -d --wait
 
 Open [http://localhost:5173](http://localhost:5173). The local administrator account is documented in [the demo guide](docs/demo-guide.md).
 
-The `migrate` container applies the EF Core bundle before the API starts. A migration failure leaves the API stopped. The first start downloads several container images and creates an empty database. Follow the [five-minute product flow](docs/demo-guide.md#five-minute-product-flow) to create an employer, publish a job, and apply as a job seeker.
+The `migrate` container runs the local-development build of `Pursuit.Migrations` before the API starts. A migration failure leaves the API stopped. This local image explicitly permits plaintext only for the Compose PostgreSQL hostname and must not be promoted to production. The first start downloads several container images and creates an empty database. Follow the [five-minute product flow](docs/demo-guide.md#five-minute-product-flow) to create an employer, publish a job, and apply as a job seeker.
 
 Stop the stack with:
 
@@ -56,14 +56,22 @@ The Development API uses the Compose PostgreSQL database on port 5433 and expect
 docker compose up -d --wait postgres redis rabbitmq azurite
 ```
 
-Update the SQL Express database before starting the API:
+Update the local PostgreSQL database before starting the API. This builds the
+explicit local-development variant of `Pursuit.Migrations`; deployment must use
+the production artifact without this build property:
 
 ```powershell
-dotnet tool restore
-$env:ConnectionStrings__DefaultConnection = "Host=localhost;Port=5433;Database=PursuitDb;Username=pursuit;Password=pursuit-local-database-password;SSL Mode=Disable;"
-dotnet dotnet-ef database update --project src/Pursuit.Infrastructure --startup-project src/Pursuit.API
+$env:DOTNET_ENVIRONMENT = "Development"
+$env:ConnectionStrings__DefaultConnection = "Host=localhost;Port=5433;Database=PursuitDb;Username=pursuit;Password=pursuit-local-database-password;SSL Mode=Disable;GSS Encryption Mode=Disable;"
+dotnet run --project src/Pursuit.Migrations --configuration Release -p:AllowInsecureLocalMigrations=true
 Remove-Item Env:ConnectionStrings__DefaultConnection
+Remove-Item Env:DOTNET_ENVIRONMENT
 ```
+
+Use `dotnet ef` to create and inspect migration source during development, not to
+apply a deployment. EF's `database update --connection` option replaces the
+factory connection after design-time validation; it is therefore not a deployment
+security boundary.
 
 Run the `http` profile of `Pursuit.API` in Visual Studio, or use `dotnet run --project src/Pursuit.API`. In `client`, run `npm run dev`. The client environment file must point `VITE_API_BASE_URL` to `http://localhost:5146`. Keep the three dependency containers running while applying to jobs; résumé upload requires Azurite, and job search uses Redis.
 
@@ -81,7 +89,7 @@ Run the `http` profile of `Pursuit.API` in Visual Studio, or use `dotnet run --p
 - Redis-backed job search caching with cache invalidation
 - RabbitMQ application-submitted events and a background consumer
 - Production startup configuration checks and opt-in administrator bootstrap
-- A versioned EF Core migration bundle that runs before API deployment
+- A versioned, fail-closed migration runner that validates production PostgreSQL TLS before it runs ahead of API deployment
 
 ## Architecture
 
@@ -123,8 +131,8 @@ The GitHub Actions workflow runs four jobs on every push and pull request:
 
 | Job | Checks |
 | --- | --- |
-| Backend | Release build and 86 PostgreSQL, Redis, RabbitMQ, API, and configuration tests |
-| Migration bundle | Linux bundle build, empty-database migration, idempotent rerun, and retained artifact |
+| Backend | Release build and 116 PostgreSQL, Redis, RabbitMQ, API, and configuration tests |
+| Migrations | Fail-closed Linux runner build, production TLS rejection check, empty-database migration, idempotent rerun, and retained artifact |
 | Frontend | ESLint, 83 Vitest component tests, and a production build |
 | Browser | Playwright employer-to-job-seeker journey across Chromium, Firefox, and WebKit |
 

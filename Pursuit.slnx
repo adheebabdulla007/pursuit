@@ -4,6 +4,7 @@
     <Project Path="src/Pursuit.Application/Pursuit.Application.csproj" />
     <Project Path="src/Pursuit.Domain/Pursuit.Domain.csproj" />
     <Project Path="src/Pursuit.Infrastructure/Pursuit.Infrastructure.csproj" />
+    <Project Path="src/Pursuit.Migrations/Pursuit.Migrations.csproj" />
   </Folder>
   <Folder Name="/tests/">
     <Project Path="tests/Pursuit.IntegrationTests/Pursuit.IntegrationTests.csproj" />

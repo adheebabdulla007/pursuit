@@ -1,6 +1,6 @@
 using System.Net.Mail;
 using System.Text;
-using Npgsql;
+using Pursuit.Infrastructure.Persistence;
 
 namespace Pursuit.API.Configuration;
 
@@ -136,17 +136,15 @@ public static class StartupConfigurationValidator
         if (connectionString is null)
             return;
 
-        try
+        var errors = PostgreSqlConnectionSecurityPolicy.GetProductionValidationErrors(connectionString);
+        if (isProduction)
         {
-            var builder = new NpgsqlConnectionStringBuilder(connectionString);
-            if (isProduction && builder.SslMode != SslMode.VerifyFull)
-                failures.Add("Production PostgreSQL configuration must use SSL Mode=VerifyFull.");
-            if (isProduction
-                && builder.TryGetValue("Trust Server Certificate", out var trustServerCertificate)
-                && trustServerCertificate is true)
-                failures.Add("Production PostgreSQL configuration must validate the server certificate.");
+            foreach (var error in errors)
+                failures.Add(error);
         }
-        catch (ArgumentException)
+        else if (errors.Contains(
+                     "ConnectionStrings:DefaultConnection is not a valid PostgreSQL connection string.",
+                     StringComparer.Ordinal))
         {
             failures.Add("ConnectionStrings:DefaultConnection is not a valid PostgreSQL connection string.");
         }

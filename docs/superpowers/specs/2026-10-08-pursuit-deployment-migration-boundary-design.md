@@ -1,5 +1,11 @@
 # Pursuit deployment migration boundary design
 
+> **Superseded on 2026-10-13.** This document records the earlier SQL Server and
+> EF bundle decision. The current PostgreSQL design and production migration
+> boundary are in
+> `docs/superpowers/specs/2026-10-10-pursuit-portable-public-demo-hosting-design.md`
+> and `docs/production-configuration.md`.
+
 Date: 2026-10-08
 
 ## Objective

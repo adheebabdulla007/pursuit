@@ -4,7 +4,7 @@
 
 ### First minute: product and shape
 
-Pursuit is a multi-tenant job board. Employers create jobs, job seekers apply with resumes, and administrators manage accounts. The React client talks to one ASP.NET Core API backed by SQL Server. Redis caches job searches, RabbitMQ carries application events, and Blob Storage holds resumes.
+Pursuit is a multi-tenant job board. Employers create jobs, job seekers apply with resumes, and administrators manage accounts. The React client talks to one ASP.NET Core API backed by PostgreSQL. Redis caches job searches, RabbitMQ carries application events, and Blob Storage holds resumes.
 
 Show the diagram in [`architecture.md`](architecture.md), then explain why a modular monolith fits a one-developer project better than several independently deployed services.
 
@@ -34,15 +34,15 @@ Explain why SameSite cookies alone are not the whole CSRF boundary, how allowed 
 
 ### Fifth minute: tests and unfinished work
 
-Open `.github/workflows/ci.yml` and one integration test. Describe the real SQL Server, Redis, and RabbitMQ containers used by the backend suite and the Playwright browser journey.
+Open `.github/workflows/ci.yml` and one integration test. Describe the real PostgreSQL, Redis, and RabbitMQ containers used by the backend suite and the Playwright browser journey.
 
 Finish with the most important known gap: database writes and RabbitMQ publication need a transactional outbox. State the failure case and the planned fix clearly.
 
 ## Questions I should be ready to answer
 
-### Why SQL Server?
+### Why PostgreSQL?
 
-Users, tenants, jobs, applications, and refresh tokens have clear relationships and uniqueness rules. Transactions and database constraints matter for duplicate applications and token rotation. A relational database fits those requirements directly.
+Users, tenants, jobs, applications, and refresh tokens have clear relationships and uniqueness rules. Transactions and database constraints matter for duplicate applications and token rotation. PostgreSQL preserves those relational guarantees locally, in CI, and on portable hosted providers without maintaining two database paths.
 
 ### Why Redis?
 
@@ -62,7 +62,7 @@ Validated identity claims set the current tenant. EF query filters constrain ord
 
 ### What happens if two users submit the same application request?
 
-The service checks first for a useful error, and SQL Server has a unique `(JobId, ApplicantId)` index as the final concurrency guard. One insert can succeed.
+The service checks first for a useful error, and PostgreSQL has a unique `(JobId, ApplicantId)` index as the final concurrency guard. One insert can succeed.
 
 ### What happens if two refresh requests arrive together?
 
@@ -70,7 +70,7 @@ Both requests try to lock the same user row inside a transaction. One rotates th
 
 ### What would you change before a public production release?
 
-I would add the transactional outbox, move migrations to a deployment job, add dependency readiness checks, bound resource-heavy inputs, add rate limits, and test the container under representative load.
+I would add the transactional outbox, finish hosted-provider compatibility checks, add dependency readiness checks, bound resource-heavy inputs, add rate limits, and test the container under representative load. Migrations already run as a separate deployment job.
 
 ### Which design would you reconsider with more traffic?
 
@@ -84,7 +84,7 @@ Public registration originally accepted any parseable enum value, including nume
 
 ### Concurrency correction
 
-Refresh-token rotation originally allowed two requests to race. I moved the operation into a SQL transaction, locked by user, and tested concurrent requests against a real SQL Server container. This taught me to keep a database constraint or lock behind application-level checks.
+Refresh-token rotation originally allowed two requests to race. I moved the operation into a SQL transaction, locked the user row with PostgreSQL `FOR UPDATE`, and tested concurrent requests against a real PostgreSQL container. This taught me to keep a database constraint or lock behind application-level checks.
 
 ### Production configuration correction
 

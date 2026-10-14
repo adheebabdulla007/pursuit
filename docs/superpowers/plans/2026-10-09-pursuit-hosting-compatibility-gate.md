@@ -1,5 +1,14 @@
 # Pursuit hosting compatibility gate implementation plan
 
+> **Superseded on 2026-10-10.** The SQL Server/MonsterASP.NET direction in this
+> document was rejected before public deployment. The active design is
+> `docs/superpowers/specs/2026-10-10-pursuit-portable-public-demo-hosting-design.md`,
+> the active implementation plan is
+> `docs/superpowers/plans/2026-10-10-pursuit-postgresql-portability.md`, and current
+> verified evidence is in `docs/hosting/postgresql-portability-report.md`.
+> The remaining content is retained as historical decision context only and must
+> not be executed as the current hosting plan.
+
 > **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.
 
 **Goal:** Prove or reject the Vercel plus MonsterASP.NET hosting choice against Pursuit's real SQL Server, cookie, CSRF, Redis, RabbitMQ, IIS, memory and browser behavior before building the public demo layer.

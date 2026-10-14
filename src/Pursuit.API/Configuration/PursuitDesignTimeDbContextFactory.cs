@@ -16,6 +16,12 @@ public sealed class PursuitDesignTimeDbContextFactory : IDesignTimeDbContextFact
             throw new InvalidOperationException(
                 "ConnectionStrings:DefaultConnection is required to create migration artifacts.");
 
+        var environment = Environment.GetEnvironmentVariable("DOTNET_ENVIRONMENT")
+            ?? Environment.GetEnvironmentVariable("ASPNETCORE_ENVIRONMENT");
+        if (!PostgreSqlConnectionSecurityPolicy.PermitsExplicitLocalPlaintext(connectionString, environment))
+            throw new InvalidOperationException(
+                "Design-time EF commands support only local Development or Testing databases. Use Pursuit.Migrations for deployment.");
+
         var options = new DbContextOptionsBuilder<AppDbContext>()
             .UseNpgsql(connectionString)
             .Options;

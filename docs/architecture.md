@@ -2,7 +2,7 @@
 
 ## System boundary
 
-Pursuit is a modular monolith. One ASP.NET Core process owns the HTTP API and the RabbitMQ consumer. SQL Server is the source of truth. Redis holds disposable search results, Blob Storage holds resumes, and RabbitMQ carries application-submitted events.
+Pursuit is a modular monolith. One ASP.NET Core process owns the HTTP API and the RabbitMQ consumer. PostgreSQL is the source of truth. Redis holds disposable search results, Blob Storage holds resumes, and RabbitMQ carries application-submitted events.
 
 ```mermaid
 flowchart TB
@@ -10,7 +10,7 @@ flowchart TB
     API[ASP.NET Core API]
     Auth[Authentication and CSRF middleware]
     App[Application services]
-    SQL[(SQL Server)]
+    SQL[(PostgreSQL)]
     Redis[(Redis cache)]
     Blob[(Blob Storage)]
     Rabbit[(RabbitMQ)]
@@ -45,7 +45,7 @@ flowchart LR
 
 `Pursuit.Application` owns use cases and interfaces. Services receive repository, cache, storage, and publisher interfaces through dependency injection.
 
-`Pursuit.Infrastructure` implements those interfaces with EF Core, SQL Server, Redis, RabbitMQ, BCrypt, and Azure Blob Storage.
+`Pursuit.Infrastructure` implements those interfaces with EF Core, PostgreSQL, Redis, RabbitMQ, BCrypt, and Azure Blob Storage.
 
 `Pursuit.API` is the composition root. It configures authentication, CORS, antiforgery protection, middleware, controllers, and startup checks.
 
@@ -55,7 +55,7 @@ flowchart LR
 sequenceDiagram
     participant B as Browser
     participant A as API
-    participant D as SQL Server
+    participant D as PostgreSQL
 
     B->>A: GET /api/auth/csrf
     A-->>B: CSRF cookie + request token
@@ -70,7 +70,7 @@ sequenceDiagram
 
 Access tokens live for at most 15 minutes and carry the user role, tenant ID, and security version. Each authenticated request checks those claims against current account state. Deactivating a user or tenant therefore blocks an otherwise valid token.
 
-Refresh tokens are random values. SQL Server stores only their SHA-256 hashes. Rotation runs under a database transaction and locks the user row, which stops two requests from successfully rotating the same session at once. Reuse of an old token revokes all refresh tokens for that user.
+Refresh tokens are random values. PostgreSQL stores only their SHA-256 hashes. Rotation runs under a database transaction and locks the user row with `FOR UPDATE`, which stops two requests from successfully rotating the same session at once. Reuse of an old token revokes all refresh tokens for that user.
 
 ## Tenant boundary
 
@@ -98,7 +98,7 @@ sequenceDiagram
     participant B as Browser
     participant A as API
     participant S as Blob Storage
-    participant D as SQL Server
+    participant D as PostgreSQL
     participant R as RabbitMQ
 
     B->>A: POST resume + job ID
@@ -108,7 +108,7 @@ sequenceDiagram
     A-->>B: Application response
 ```
 
-SQL Server has a unique index on `(JobId, ApplicantId)`, so concurrent requests cannot create duplicate applications.
+PostgreSQL has a unique index on `(JobId, ApplicantId)`, so concurrent requests cannot create duplicate applications.
 
 There is one known consistency gap. The SQL insert commits before RabbitMQ publication. A broker failure can leave a saved application without a notification and return an error to the browser. The next backend milestone is a transactional outbox: write the application and event in one SQL transaction, then publish the stored event from a retrying worker.
 
@@ -116,13 +116,13 @@ There is one known consistency gap. The SQL insert commits before RabbitMQ publi
 
 Startup validates required settings before administrator creation or hosted consumers run. Production rejects development credentials and insecure SQL or Blob settings. Data Protection keys must live in a shared directory when multiple instances serve browser requests.
 
-CI builds a Linux EF Core migration bundle and verifies it against empty and current databases. A one-time deployment job runs that bundle before API rollout. The normal API process never calls `MigrateAsync`, so replicas can use a database identity without schema-alteration permissions. A failed migration exits non-zero and blocks dependent API startup in Docker Compose.
+CI builds a production Linux `Pursuit.Migrations` runner with no plaintext path, proves that it rejects the local plaintext connection, and retains that artifact. CI separately builds a non-production runner to verify empty and current database migrations. A one-time deployment job runs only the production artifact before API rollout. It accepts its connection only from `ConnectionStrings__DefaultConnection`, requires PostgreSQL `SSL Mode=VerifyFull`, and rejects certificate trust bypass. The normal API process never calls `MigrateAsync`, so replicas can use a database identity without schema-alteration permissions. A failed migration exits non-zero and blocks dependent API startup in Docker Compose.
 
 ## Failure behavior
 
 | Dependency | Current behavior |
 | --- | --- |
-| SQL Server | Migration job blocks rollout; an API request fails if connectivity is lost after deployment |
+| PostgreSQL | Migration job blocks rollout; an API request fails if connectivity is lost after deployment |
 | Redis | Cache operations log the error and fall back to SQL |
 | RabbitMQ at startup | Consumer retries with increasing delays |
 | RabbitMQ during publish | Application record may already be committed; transactional outbox is planned |

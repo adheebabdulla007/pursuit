@@ -39,7 +39,7 @@ public sealed class StartupConfigurationValidatorTests
     {
         var values = ValidValues();
         values["ConnectionStrings:DefaultConnection"] =
-            "Host=database;Port=5432;Database=Pursuit;Username=pursuit;Password=StrongDbPassword!;SSL Mode=Require;Trust Server Certificate=true;";
+            "Host=database;Port=5432;Database=Pursuit;Username=pursuit;Password=StrongDbPassword!;SSL Mode=Require;Trust Server Certificate=true;GSS Encryption Mode=Disable;";
         values["RabbitMqSettings:Username"] = "guest";
         values["RabbitMqSettings:Password"] = "guest";
         values["AzureBlobSettings:ConnectionString"] = "UseDevelopmentStorage=true;";
@@ -54,9 +54,9 @@ public sealed class StartupConfigurationValidatorTests
     }
 
     [Theory]
-    [InlineData("Host=database;Database=Pursuit;Username=pursuit;Password=StrongDbPassword!")]
-    [InlineData("Host=database;Database=Pursuit;Username=pursuit;Password=StrongDbPassword!;SSL Mode=Disable")]
-    [InlineData("Host=database;Database=Pursuit;Username=pursuit;Password=StrongDbPassword!;SSL Mode=Require")]
+    [InlineData("Host=database;Database=Pursuit;Username=pursuit;Password=StrongDbPassword!;GSS Encryption Mode=Disable")]
+    [InlineData("Host=database;Database=Pursuit;Username=pursuit;Password=StrongDbPassword!;SSL Mode=Disable;GSS Encryption Mode=Disable")]
+    [InlineData("Host=database;Database=Pursuit;Username=pursuit;Password=StrongDbPassword!;SSL Mode=Require;GSS Encryption Mode=Disable")]
     public void Validate_rejects_postgresql_production_connection_without_verified_tls(string connectionString)
     {
         var values = ValidValues();
@@ -111,7 +111,7 @@ public sealed class StartupConfigurationValidatorTests
     private static Dictionary<string, string?> ValidValues() => new()
     {
         ["ConnectionStrings:DefaultConnection"] =
-            "Host=database;Port=5432;Database=Pursuit;Username=pursuit;Password=StrongDbPassword!;SSL Mode=VerifyFull;Trust Server Certificate=false;",
+            "Host=database;Port=5432;Database=Pursuit;Username=pursuit;Password=StrongDbPassword!;SSL Mode=VerifyFull;Trust Server Certificate=false;GSS Encryption Mode=Disable;",
         ["JwtSettings:Secret"] = "unit-test-signing-secret-with-more-than-32-bytes",
         ["JwtSettings:Issuer"] = "Pursuit",
         ["JwtSettings:Audience"] = "PursuitUsers",

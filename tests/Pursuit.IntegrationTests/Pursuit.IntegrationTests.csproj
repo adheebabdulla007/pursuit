@@ -26,6 +26,7 @@
 
   <ItemGroup>
     <ProjectReference Include="..\..\src\Pursuit.API\Pursuit.API.csproj" />
+    <ProjectReference Include="..\..\src\Pursuit.Migrations\Pursuit.Migrations.csproj" Aliases="migrations" />
   </ItemGroup>
 
 </Project>

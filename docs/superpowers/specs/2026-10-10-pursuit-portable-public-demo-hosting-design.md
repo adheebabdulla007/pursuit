@@ -52,9 +52,11 @@ database engine as the hosted demo.
 Production PostgreSQL connections must use `SSL Mode=VerifyFull`, which requires
 encryption and validates both the certificate chain and hostname. Development
 containers may explicitly use `SSL Mode=Disable`; that exception must never pass
-Production startup validation.
+Production startup validation. Both paths explicitly use
+`GSS Encryption Mode=Disable` because Pursuit uses password authentication and
+must not prefer GSS over the required TLS transport.
 
-Schema changes continue to use a reviewed EF Core migration bundle executed
+Schema changes continue to use the reviewed `Pursuit.Migrations` artifact executed
 before the API revision is promoted. The API never migrates its database during
 startup.
 
@@ -88,7 +90,7 @@ wakes. RabbitMQ messages and Redis entries never become the source of truth.
 
 1. Build and test the reviewed commit.
 2. Export the synthetic hosted database before a schema change.
-3. Run the migration bundle with a migration-only identity.
+3. Run `Pursuit.Migrations` with a migration-only identity and a `VerifyFull` connection.
 4. Deploy a private Render candidate and wait for readiness.
 5. Run API smoke checks directly against Render.
 6. Deploy one fixed Vercel staging candidate.

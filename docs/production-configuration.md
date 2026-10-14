@@ -18,13 +18,15 @@ settings through the deployment platform's secret store or environment variables
   is hosted on a different origin
 
 Production requires PostgreSQL `SSL Mode=VerifyFull`, rejects certificate bypass,
+and requires `GSS Encryption Mode=Disable` so password-authenticated connections
+always use the certificate-validated TLS path.
 the RabbitMQ guest account, and Azurite's development storage connection. Configuration validation checks shape
 and policy only; dependency connectivity belongs in deployment readiness checks.
 
 A hosted PostgreSQL connection must keep hostname verification enabled:
 
 ```text
-Host=<provider-host>;Port=5432;Database=<database>;Username=<api-user>;Password=<secret>;SSL Mode=VerifyFull;
+Host=<provider-host>;Port=5432;Database=<database>;Username=<api-user>;Password=<secret>;SSL Mode=VerifyFull;GSS Encryption Mode=Disable;
 ```
 
 Do not add `Trust Server Certificate=true`. Store the complete value in the
@@ -33,9 +35,23 @@ hosting provider's secret manager, never in a tracked file.
 ## Database migrations
 
 The API does not create or alter the database schema. CI builds
-`artifacts/migrations/efbundle` for Linux and runs it against an empty database and
-an up-to-date database. The API container image carries the same bundle at
-`/app/migrations/efbundle`.
+`artifacts/migrations/Pursuit.Migrations` for Linux and runs it against an empty database and
+an up-to-date database. The API container image carries the same artifact at
+`/app/migrations/Pursuit.Migrations`.
+
+The production runner accepts the database connection only from
+`ConnectionStrings__DefaultConnection`; it has no command-line connection override
+and has no plaintext exception compiled into it. It fails before opening a
+connection unless PostgreSQL uses `SSL Mode=VerifyFull` with certificate trust
+bypass disabled. Local Compose and CI build a separate non-production artifact
+whose plaintext path is restricted to explicit Development or Testing environments
+and the repository's loopback or Compose PostgreSQL hostnames. Never promote that
+local-test artifact or image.
+
+Do not use `dotnet ef database update` for deployment. EF Core applies its
+`--connection` override after the design-time factory creates the context, so the
+factory cannot enforce the final target. The reviewed `Pursuit.Migrations`
+artifact is the production migration boundary.
 
 Use two database identities in production:
 
@@ -51,16 +67,14 @@ must not start before the migration job succeeds.
 To build the same Linux artifact outside CI:
 
 ```powershell
-dotnet tool restore
-$env:ConnectionStrings__DefaultConnection = "Host=localhost;Port=5432;Database=PursuitBuild;Username=build;Password=BuildOnly1!;SSL Mode=Disable;"
-dotnet dotnet-ef migrations bundle --project src/Pursuit.Infrastructure --startup-project src/Pursuit.API --configuration Release --target-runtime linux-x64 --output artifacts/migrations/efbundle --force
-Remove-Item Env:ConnectionStrings__DefaultConnection
+dotnet restore src/Pursuit.Migrations/Pursuit.Migrations.csproj --runtime linux-x64
+dotnet publish src/Pursuit.Migrations/Pursuit.Migrations.csproj --configuration Release --runtime linux-x64 --self-contained false -p:PublishSingleFile=true --output artifacts/migrations --no-restore
 ```
 
 Run it with the migration identity injected by the deployment secret store:
 
 ```bash
-ConnectionStrings__DefaultConnection='<migration connection>' ./artifacts/migrations/efbundle
+ConnectionStrings__DefaultConnection='<migration connection with SSL Mode=VerifyFull>' ./artifacts/migrations/Pursuit.Migrations
 ```
 
 Do not run an automatic down-migration during rollback. If a migration fails, keep
