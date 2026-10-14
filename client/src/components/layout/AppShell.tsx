@@ -1,10 +1,10 @@
-import { useEffect, useRef, type ReactNode } from 'react'
+import { useLayoutEffect, useRef, type ReactNode } from 'react'
 import { useLocation } from 'react-router-dom'
 import Navbar from '../Navbar'
 export function AppShell({ children }: { children: ReactNode }) {
   const location = useLocation(); const main = useRef<HTMLElement>(null)
   const previousPath = useRef(location.pathname)
-  useEffect(() => {
+  useLayoutEffect(() => {
     if (previousPath.current !== location.pathname) main.current?.focus()
     previousPath.current = location.pathname
   }, [location.pathname])

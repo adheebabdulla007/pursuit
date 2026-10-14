@@ -47,11 +47,13 @@ test('complete hiring workflow crosses every role and preserves status', async (
   await register(page, 'Employer', employerEmail, company)
   await expect(page).toHaveURL(/\/employer\/jobs$/)
   await navigateViaShell(page, 'link', 'Post a job')
-  await page.getByLabel('Job title').fill(jobTitle)
+  const jobTitleInput = page.getByLabel('Job title')
+  await jobTitleInput.pressSequentially(jobTitle, { delay: 10 })
   await page.getByLabel('Description').fill('Own reliable services, production diagnostics, and clear technical decisions.')
   await page.getByLabel('Location').fill('Riyadh')
   await page.getByLabel('Minimum salary').fill('80000')
   await page.getByLabel('Maximum salary').fill('120000')
+  await expect(jobTitleInput).toHaveValue(jobTitle)
   await page.getByRole('button', { name: 'Publish job' }).click()
   await expect(page).toHaveURL(/\/employer\/jobs$/)
   await expect(page.getByRole('heading', { name: jobTitle })).toBeVisible()
@@ -98,6 +100,7 @@ test('complete hiring workflow crosses every role and preserves status', async (
     if (await next.isDisabled()) break
     const response = page.waitForResponse((candidate) => candidate.url().includes('/api/admin/users?') && candidate.request().method() === 'GET')
     await next.click(); await response
+    await expect(page.getByText(new RegExp(`^Page ${index + 2} of `))).toBeVisible()
   }
   const accountEmail = page.getByText(seekerEmail, { exact: true }).filter({ visible: true }).first()
   await expect(accountEmail).toBeVisible()
@@ -122,5 +125,5 @@ test('mobile navigation, filters, focus, and detail layout remain usable', async
   const overflow = await page.evaluate('document.documentElement.scrollWidth - document.documentElement.clientWidth')
   expect(overflow).toBeLessThanOrEqual(1)
   const firstJob = page.locator('a[href^="/jobs/"]').filter({ visible: true }).first()
-  if (await firstJob.count()) { await firstJob.click(); await expect(page).toHaveURL(/\/jobs\/[0-9a-f-]+/); await expect(page.getByRole('heading', { level: 1 })).toBeVisible(); expect(await page.evaluate('document.documentElement.scrollWidth - document.documentElement.clientWidth')).toBeLessThanOrEqual(1) }
+  if (await firstJob.count()) { await firstJob.click(); await expect(page).toHaveURL(/\/jobs\/[0-9a-f-]+/); await expect(page.getByRole('region', { name: 'Selected job' }).getByRole('heading', { level: 1 })).toBeVisible(); expect(await page.evaluate('document.documentElement.scrollWidth - document.documentElement.clientWidth')).toBeLessThanOrEqual(1) }
 })

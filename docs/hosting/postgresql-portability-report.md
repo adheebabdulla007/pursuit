@@ -65,16 +65,15 @@ production artifact is the only one eligible for retention or deployment.
 
 ## Browser rerun note
 
-The first full browser run had one WebKit-only timeout after the job-title field
-was transiently empty. The same create-job path passed in the separate boundary
-journey, passed three consecutive focused WebKit reruns, and the complete matrix
-then passed. No deterministic product defect was reproduced; treat recurrence as
-a test-stability investigation, not as a waived failure.
+Repeated WebKit runs reproduced a navigation-focus race: the delayed AppShell
+focus effect could move focus to `main` after the first job-title character was
+entered. Moving that accessibility handoff to the layout phase removed the race.
+The focused hiring journey then passed 12 consecutive WebKit runs, and the clean
+four-project matrix passed with 25 tests and 3 configured skips.
 
 ## Remaining gates
 
-1. Commit the reviewed patch, push only `codex/portable-demo-hosting`, and verify
-   hosted CI for that exact commit.
+1. Verify hosted CI for the exact `codex/portable-demo-hosting` commit.
 2. Create free provider accounts without a payment method. Keep credentials only
    in provider secret stores or process environment.
 3. Verify Neon `VerifyFull`, Render proxy and key persistence, Upstash TLS,

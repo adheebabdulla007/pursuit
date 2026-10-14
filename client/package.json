@@ -10,6 +10,7 @@
         "preview": "vite preview",
         "test": "vitest run",
         "test:watch": "vitest",
+        "e2e:web": "vite build --mode e2e && vite preview --port 5174",
         "e2e:infra:up": "docker compose -f ../docker-compose.e2e.yml up -d --wait",
         "e2e:infra:down": "docker compose -f ../docker-compose.e2e.yml down"
     },

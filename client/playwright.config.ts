@@ -57,9 +57,10 @@ export default defineConfig({
       timeout: 120_000,
     },
     {
-      command: 'node node_modules/vite/bin/vite.js --mode e2e --port 5174',
+      command: 'npm run e2e:web',
       url: 'http://localhost:5174',
       reuseExistingServer: !process.env.CI,
+      timeout: 120_000,
     },
   ],
 });

@@ -52,6 +52,10 @@ npx playwright test
 npm run e2e:infra:down
 ```
 
+Playwright builds the client in E2E mode and serves the production bundle, so
+browser coverage exercises the deployable frontend rather than Vite's
+development-only React lifecycle.
+
 The browser test registers an employer, publishes a job, registers a job seeker, submits an application, and verifies logout token revocation.
 
 ## Client boundaries
